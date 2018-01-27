@@ -1,0 +1,136 @@
+version: '2.1'
+services:
+  dkrmon-agent:
+    container_name: dkrmon-agent
+    image: quaide/dkrmon:agent
+    ports:
+      - '30000:5000'
+    # environment:
+      # - DKRMON_PORT=9999
+    volumes:
+      - /home/tom/dkrmon/app/agent/agent.py:/dkrmon/app/agent.py:ro
+      - /var/run/docker.sock:/dkrmon/socket/docker.sock:ro
+      - /sys/fs/cgroup/memory/docker/:/dkrmon/stats/memory/:ro
+      - /var/lib/docker/:/var/lib/docker/:ro
+    mem_limit: 128m
+    tty: true
+
+  # nginx01:
+  #   image: "nginx:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #
+  # nginx02:
+  #   image: "nginx:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 33
+  #
+  # nginx03:
+  #   image: "nginx:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #
+  # nginx04:
+  #   image: "nginx:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #
+  # nginx05:
+  #   image: "nginx:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #
+  # httpd01:
+  #   image: "httpd:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #
+  # httpd02:
+  #   image: "httpd:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD","stat","/etc/passwd","||","exit 1"]
+  #     interval: 1m
+  #     timeout: 10s
+  #     retries: 3
+  #
+  # httpd03:
+  #   image: "httpd:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
+  #
+  # httpd04:
+  #   image: "httpd:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost"]
+  #     interval: 1m
+  #     timeout: 10s
+  #     retries: 3
+  #
+  # httpd05:
+  #   image: "httpd:alpine"
+  #   ports:
+  #     - "80"
+  #   mem_limit: 10m
+  #   mem_reservation: 5m
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3

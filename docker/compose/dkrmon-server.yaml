@@ -1,0 +1,11 @@
+version: '2.1'
+services:
+  dkrmon-server:
+    container_name: dkrmon-server
+    image: quaide/dkrmon:server
+    volumes:
+      - /home/tom/dkrmon/app/server:/dkrmon/app/:rw
+    ports:
+     - "8080:5000"
+    mem_limit: 128m
+    tty: true

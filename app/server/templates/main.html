@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% include 'head.html' %}
+  </head>
+
+  <body>
+    {% include 'nav.html' %}
+    <div id="content-wrap">
+      {% for agent in agents %}
+        {% include 'agent.html' %}
+        <div class="separator"></div>
+      {% endfor %}
+    </div> <!-- END content-wrap -->
+    {% include 'modals.html' %}
+    <div id="notify"></div>
+
+    <div id="devTools">
+      <button data-fn="status">Status</button><br>
+      <button data-fn="dkrDetails">dkrDetails</button><br>
+      <br><br>
+      Name<input type="text" name="name"></input><br>
+      IP<input type="text" name="ip"></input><br>
+      Port<input type="text" name="port"></input><br>
+      <button data-fn="serverAgentAdd">Add Agent</button><button data-fn="serverAgentRemove">Remove Agent</button><br>
+      <br><br>
+      <button data-fn="getAgents">Get Agents</button><br>
+      <div id="agents"></div>
+    </div>
+  </body>
+</html>
