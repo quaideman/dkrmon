@@ -1,0 +1,19 @@
+<div class="host" data-hostId="{{ host['id'] }}">
+  <header data-header="host">
+    <div class="header-title">{{ host['name'] }}</div>
+    <div class="header-controls">
+      <div class="badge str cGreen" data-badge="pct">
+          <span data-value="hostStatus">OK</span>
+        </div>
+      <button class="btn1" data-fn="expandHost" title="Expand Host"><span class="icn md-24">expand_more</span></button>
+      <button class="btn1" data-fn="collapseHost" title="Collapse Host"><span class="icn md-24">expand_less</span></button>
+    </div>
+  </header>
+  <!-- {% include 'hostDetails.html' %} -->
+  <!-- {% include 'hostCpu.html' %} -->
+  <!-- {% include 'hostMemory.html' %} -->
+  <!-- {% include 'hostStorage.html' %} -->
+  <!-- {% include 'images.html' %} -->
+  <!-- {% include 'volumes.html' %} -->
+  {% include 'containers.html' %}
+</div>

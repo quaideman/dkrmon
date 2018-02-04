@@ -1,29 +1,40 @@
-
-<div class="w3-row">
-  <div class="w3-col s12">
-    <div data-value="pct"></div>
-  </div>
-</div>
-<!-- <header>
-  <div>CPU Load</div>
-  <div data-value="pctBar"></div>
-</header> -->
-<div class="stats">
-  <div class="w3-row">
-    <div class="w3-col s6">
-      <div class="key">1 Min Avg</div>
-      <div data-value="avg1"></div>
+<div class="mod" data-mod="hostCpu">
+  <header data-header="mod">
+    <div class="header-title">CPU</div>
+    <div class="header-controls">
+      <div class="badge str cYellow" data-badge="pct">
+        <span data-value="pct">46%</span>
+      </div>
+      <button class="btn1" data-fn="toggleCollapse" title="Toggle Collapse"><span class="icn md-24"></span></button>
     </div>
-    <div class="w3-col s6">
-      <div class="key">5 Min Avg</div>
-      <div data-value="avg5"></div>
+  </header>
+  <section>
+    <div class="submod">
+      <span class="value" data-value="pct">46%</span>
     </div>
-  </div>
-  <div class="w3-row">
-    <div class="w3-col s6">
-      <div class="key">15 Min Avg</div>
-      <div data-value="avg15"></div>
+    <div class="submod">
+      <div class="flex-wrap">
+        <div class="key">1 Min Avg</div>
+        <div class="value" data-value="avg1">0.8</div>
+      </div>
     </div>
-    <div class="w3-col s6"></div>
-  </div>
+    <div class="submod">
+      <div class="flex-wrap">
+        <div class="key">5 Min Avg</div>
+        <div class="value" data-value="avg5">0.8</div>
+      </div>
+    </div>
+    <div class="submod">
+      <div class="flex-wrap">
+        <div class="key">15 Min Avg</div>
+        <div class="value" data-value="avg15">0.8</div>
+      </div>
+    </div>
+    <div class="submod">
+      <div class="flex-wrap">
+        <div class="key">Cores</div>
+        <div class="value" data-value="avg15">4</div>
+      </div>
+    </div>
+  </section>
 </div>

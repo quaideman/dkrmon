@@ -1,15 +1,31 @@
-<div class="w3-col s4 keys">
-  <div class="key">Hostname</div>
-  <div class="key">OS</div>
-  <div class="key">Kernel</div>
-  <div class="key">Version</div>
-  <div class="key">Swarm</div>
-</div>
-
-<div class="w3-col s8 values">
-  <div data-value="hostname"></div>
-  <div data-value="operatingSystem"></div>
-  <div data-value="kernelVersion"></div>
-  <div data-value="dockerVersion">XXX</div>
-  <div data-value="swarm"></div>
+<div class="mod" data-mod="hostDetails">
+  <header data-header="mod">
+    <div class="header-title">Details</div>
+    <div class="header-controls">
+      <button class="btn1" data-fn="toggleCollapse" title="Toggle Collapse"><span class="icn md-24"></span></button>
+    </div>
+  </header>
+  <section>
+    <div class="submod">
+      <div class="key">Host</div>
+      <div class="value" data-value="hostname">server1.example.com</div>
+    </div>
+    <div class="submod">
+      <div class="key">OS</div>
+      <div class="value" data-value="os">CentOS 7</div>
+    </div>
+    <div class="submod">
+      <div class="key">Kernel</div>
+        <div class="value" data-value="kernel">3.1.2.4565</div>
+    </div>
+    <div class="submod">
+      <div class="key">Docker Version</div>
+        <div class="value" data-value="dockerVersion">13.2c</div>
+    </div>
+  </section>
+  <footer>
+    <div class="footer-controls">
+      <button class="btn1 str cBlue">More</button>
+    </div>
+  </footer>
 </div>

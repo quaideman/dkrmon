@@ -195,7 +195,7 @@ def loadMain():
     ## Get just the agent names
     # for agent in dbAgentGetAll()['data']:
     #     agents.append(agent['name'])
-    return render_template('main.html', agents=dbAgentGetAll()['data'])
+    return render_template('main.html', hosts=dbAgentGetAll()['data'])
 
 ## Websockets
 @socketio.on('agentRequest')
@@ -322,20 +322,20 @@ def serverRequest(request):
     returnData = ({'request':request['request'],'data':data})
     emit('serverResponse', returnData)
 ### End New Stuff
-def PushDkrDetails():
-    """Example of how to send server generated events to clients."""
-    count = 0
-    while True:
-
-        count += 1
-        payload = []
-        for agent in dbAgentGetAll()['data']:
-            # agentDetails = {'request':'dkrDetails', 'id':agent['rowid'],'name':agent['name'],'ip':agent['ip'],'port':agent['port']}
-            agent['request'] = 'dkrDetails'
-            # print('AGENT##############',agent)
-            payload.append(agentRequest(agent))
-        socketio.emit('PushDkrDetails',payload)
-        socketio.sleep(10)
+# def PushDkrDetails():
+#     """Example of how to send server generated events to clients."""
+#     count = 0
+#     while True:
+#
+#         count += 1
+#         payload = []
+#         for agent in dbAgentGetAll()['data']:
+#             # agentDetails = {'request':'dkrDetails', 'id':agent['rowid'],'name':agent['name'],'ip':agent['ip'],'port':agent['port']}
+#             agent['request'] = 'dkrDetails'
+#             # print('AGENT##############',agent)
+#             payload.append(agentRequest(agent))
+#         socketio.emit('PushDkrDetails',payload)
+#         socketio.sleep(10)
 
 # @socketio.on('connect')
 # def test_connect():

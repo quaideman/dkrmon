@@ -1,10 +1,37 @@
-<div data-value="containersTable"></div>
-<div class="w3-bar table-controls">
-  <button data-group="container" class="btn btn4 left" data-fn="stop"><span class="icn left material-icons md-18">stop</span><span class="content">Stop</span></button>
-  <button data-group="container" class="btn btn4 left" data-fn="start"><span class="icn left material-icons md-18">play_arrow</span><span class="content">Start</span></button>
-  <button data-group="container" class="btn btn4 left" data-fn="restart"><span class="icn left material-icons md-18">eject</span><span class="content">Restart</span></button>
-  <button data-group="container" class="btn btn3 left" data-fn="log"><span class="icn left material-icons md-18">assignment</span><span class="content">Log</span></button>
-  <button data-group="container" class="btn btn3 left" data-fn="top"><span class="icn left material-icons md-18">insert_chart</span><span class="content">Top</span></button>
-  <button data-group="container" class="btn btn2 left" data-fn="inspect"><span class="icn left material-icons md-18">info_outline</span><span class="content">Inspect</span></button>
-  <button data-group="container" class="btn btn1 left" data-fn="remove"><span class="icn left material-icons md-18">clear</span><span class="content">Remove</span></button>
+<div class="mod" data-mod="containers">
+  <header data-header="mod">
+    <div class="header-title">Containers</div>
+    <div class="header-controls">
+      <div class="badge str">
+        <span data-value="total" title="Total Containers"></span>
+        <span data-value="running" title="Running Containers"></span>
+        <span data-value="exited" title="Exited Containers"></span>
+        <span data-value="starting" title="Starting Containers"></span>
+        <span data-value="healthy" title="Healthy Containers"></span>
+        <span data-value="unhealthy" title="Unhealthy Containers"></span>
+      </div>
+      <button class="btn1" data-fn="togglePause"><span class="icn md-18"></span></button>
+      <button class="btn1 icn" data-fn="toggleCollapse"><span class="icn md-24"></span></button>
+    </div>
+  </header>
+  <section><div data-table="containers"></div></section>
+  <footer>
+    <div class="footer-controls">
+      <input data-fn="filterTable" name="filter" placeholder="Filter"></input>
+      <button class="btn1 cBlue" data-fn="previousPage" title="Previous Page"><span class="icn md-18">navigate_before</span></button>
+      <div class="badge str">
+        <span data-value="currentPage" title="Current Page"></span>
+      </div>
+      <button class="btn1 cBlue" data-fn="nextPage" title="Next Page"><span class="icn md-18">navigate_next</span></button>
+    </div>
+    <div class="footer-controls">
+      <button class="btn1 cBlue" data-fn="containerStop" title="Stop Container"><span class="icn md-18">stop</span></button>
+      <button class="btn1 cBlue" data-fn="containerStart" title="Start Container"><span class="icn md-18">play_arrow</span></button>
+      <button class="btn1 cBlue" data-fn="containerRestart" title="Restart Container"><span class="icn md-18">refresh</span></button>
+      <button class="btn1 cGreen" data-fn="containerLog" title="View Container Log"><span class="icn md-18">assignment</span></button>
+      <button class="btn1 cGreen" data-fn="containerTop" title="View Container Top"><span class="icn md-18">equalizer</span></button>
+      <button class="btn1 cGreen" data-fn="containerInspect" title="Inspect Container"><span class="icn md-18">search</span></button>
+      <button class="btn1 cRed" data-fn="containerRemove" title="Remove Container"><span class="icn md-18">clear</span></button>
+    </div>
+  </footer>
 </div>
