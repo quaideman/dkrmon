@@ -64,6 +64,7 @@ def myRequests(request):
     def dkrDetails():
         # dkrClient = docker.DockerClient(base_url='unix://dkrmon/socket/docker.sock')
         # dkrClient = docker.from_env()
+
         returnData = dkrClient.df()
         return returnData
     ## Switch the requests
@@ -82,8 +83,10 @@ def myRequests(request):
 def prereqs():
     ''' Check prereqs before starting the agent '''
     ## Create the dkrClient object
-    dkrSock = '/dkrmon/socket/docker.sock'
+    # dkrSock = '/dkrmon/socket/docker.sock'
+    dkrSock = '/var/run/docker.sock'
     if os.path.exists(dkrSock):
+        global dkrClient
         dkrClient = docker.DockerClient(base_url='unix:/'+dkrSock)
         return True
     else:

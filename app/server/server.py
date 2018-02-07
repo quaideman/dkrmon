@@ -144,49 +144,49 @@ def dbAgentRemove(agent):
     finally:
         dbConn.close()
 
-def agentRequest(agentDetails):
-    ''' Make requests to specified agents '''
-    def socketSnd(sock, msg):
-        ''' Prefix each message with a 4-byte length (network byte order) '''
-        msg = struct.pack('>I', len(msg)) + msg
-        sock.sendall(msg)
-    def socketRcv(sock):
-        ''' Read message length and unpack it into an integer '''
-        raw_msglen = SocketRcvAll(sock, 4)
-        if not raw_msglen:
-            return None
-        msglen = struct.unpack('>I', raw_msglen)[0]
-        # Read the message data
-        return SocketRcvAll(sock, msglen)
-    def SocketRcvAll(sock, n):
-        ''' Helper function to recv n bytes or return None if EOF is hit '''
-        data = b''
-        while len(data) < n:
-            packet = sock.recv(n - len(data))
-            if not packet:
-                return None
-            data += packet
-        return data
-    try:
-        agentSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        agentSocket.settimeout(1)
-        sndPayload = {'request' : agentDetails['request']}
-        sndPayload = json.dumps(sndPayload) # Serialse
-        sndPayload = sndPayload.encode() # Encode
-        port = int(agentDetails['port'])
-        agentSocket.connect((agentDetails['ip'], agentDetails['port']))
-        socketSnd(agentSocket, sndPayload)
-        rcvPayload = socketRcv(agentSocket)
-        rcvPayload = json.loads(rcvPayload)
-        rcvPayload['agentName'] = agentDetails['name']
-        rcvPayload['agentId'] = agentDetails['id']
-        return rcvPayload
-    except socket.error as e:
-        return {'action':'agentRequest','result':'error','message': os.strerror(e.errno)}
-    except:
-        return {'action':'agentRequest','result':'error','message': 'Failed to connect to agent'}
-    finally:
-        agentSocket.close()
+# def agentRequest(agentDetails):
+#     ''' Make requests to specified agents '''
+#     def socketSnd(sock, msg):
+#         ''' Prefix each message with a 4-byte length (network byte order) '''
+#         msg = struct.pack('>I', len(msg)) + msg
+#         sock.sendall(msg)
+#     def socketRcv(sock):
+#         ''' Read message length and unpack it into an integer '''
+#         raw_msglen = SocketRcvAll(sock, 4)
+#         if not raw_msglen:
+#             return None
+#         msglen = struct.unpack('>I', raw_msglen)[0]
+#         # Read the message data
+#         return SocketRcvAll(sock, msglen)
+#     def SocketRcvAll(sock, n):
+#         ''' Helper function to recv n bytes or return None if EOF is hit '''
+#         data = b''
+#         while len(data) < n:
+#             packet = sock.recv(n - len(data))
+#             if not packet:
+#                 return None
+#             data += packet
+#         return data
+#     try:
+#         agentSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#         agentSocket.settimeout(1)
+#         sndPayload = {'request' : agentDetails['request']}
+#         sndPayload = json.dumps(sndPayload) # Serialse
+#         sndPayload = sndPayload.encode() # Encode
+#         port = int(agentDetails['port'])
+#         agentSocket.connect((agentDetails['ip'], agentDetails['port']))
+#         socketSnd(agentSocket, sndPayload)
+#         rcvPayload = socketRcv(agentSocket)
+#         rcvPayload = json.loads(rcvPayload)
+#         rcvPayload['agentName'] = agentDetails['name']
+#         rcvPayload['agentId'] = agentDetails['id']
+#         return rcvPayload
+#     except socket.error as e:
+#         return {'action':'agentRequest','result':'error','agentId': agentDetails['id'],'message': os.strerror(e.errno)}
+#     except:
+#         return {'action':'agentRequest','result':'error','message': 'Failed to connect to agent'}
+#     finally:
+#         agentSocket.close()
 
 ## Routes
 @app.route('/')
@@ -303,9 +303,9 @@ def agentRequest(request):
                 returnData.append(rcvPayload)
                 # return rcvPayload
             except socket.error as e:
-                return {'action':'agentRequest','result':'error','message': os.strerror(e.errno)}
+                returnData.append( {'action':'agentRequest','result':'error','message': os.strerror(e.errno),'agentId':agent['id']} )
             except:
-                return {'action':'agentRequest','result':'error','message': 'Failed to connect to agent'}
+                returnData.append( {'action':'agentRequest','result':'error','message': 'Failed to connect to agent'} )
             finally:
                 agentSocket.close()
         ## Return

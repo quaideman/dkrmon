@@ -244,9 +244,15 @@ footer {
     }
     section {
       padding: 0;
-      height: 320px;
+      height: 350px;
       // overflow: auto;
       // position: relative;
+      &.placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+      }
       [data-table="containers"] {
         display: grid;
         grid-auto-flow: dense;
@@ -271,9 +277,10 @@ footer {
         .cell {
           display: none;
           font-family: @f2;
-          transition: background-color 0.2s;
+          // transition: all 0.2s;
           &.hovered {
             background-color: lighten(@c1,15%);
+            color: white;
           }
           &.selected {
             background-color: lighten(@c1,25%);
@@ -519,7 +526,14 @@ button {
     color: lighten(@c1,30%);
     transition: all 0.2s;
     border-radius: 4px;
-
+    &:disabled {
+      background-color: lighten(@c1,10%);
+      cursor: default;
+      &:hover {
+        color: lighten(@c1,30%) !important;
+        background-color: lighten(@c1,10%) !important;
+      }
+    }
     &:hover {
       background-color: lighten(@c1,10%);
       color: lighten(@c1,70%);
@@ -561,10 +575,27 @@ button {
   color: white;
   border-radius: 24px;
   padding: 0 8px;
-  &.str {
+  .str {
     text-transform: uppercase;
     font-weight: 600;
     font-size: 12px;
+  }
+  .icn {
+    font-family: "Material Icons";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-feature-settings: 'liga' 1;
+    -webkit-font-smoothing: antialiased;
+    &.md-18 {font-size: 18px;}
+    &.md-24 {font-size: 24px;}
   }
   &.cRed {
     background-color: @cRed;
