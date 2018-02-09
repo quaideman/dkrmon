@@ -1,0 +1,16 @@
+{
+  "dashboards": [
+    {
+      "name":"Dashboard One","hosts": [
+        {"name":"Server One","ip":"192.168.1.190","port":"5000"},
+        {"name":"Server Two","ip":"192.168.1.191","port":"5000"}
+      ]
+    },
+    {
+      "name":"Dashboard Two","hosts": [
+        {"name":"Server One","ip":"192.168.1.190","port":"5000"},
+        {"name":"Server Two","ip":"192.168.1.191","port":"5000"}
+      ]
+    }
+  ]
+}

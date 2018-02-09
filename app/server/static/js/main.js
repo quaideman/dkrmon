@@ -256,37 +256,36 @@ var dashboardControls = {
   },
 }
 
-function cellFormat(key,data){
-  //  Formats table data cells when they contain objects
-  // console.log(key,data);
-  // Is there valid obects
-  if (data.length > 0) {
-    switch (key) {
-      case 'Ports':
-        // Iterate over X number of ports
-        returnData = ""
-        $.each(data,function(i,v){
-          returnData += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
-        })
-        break;
-      case 'Names':
-        // Iterate over X number of names
-        returnData = ""
-        $.each(data,function(i,v){
-          returnData += v
-        })
-        break;
-      default:
-        returnData = "NO MATCH"
-    }
-    return returnData
-  } else {
-    return "NA"
-  }
-
-}
-
 function buildTable(hostId,table,data,columns,pageLimit){
+  function cellFormat(key,data){
+    //  Formats table data cells when they contain objects
+    // console.log(key,data);
+    // Is there valid obects
+    if (data.length > 0) {
+      switch (key) {
+        case 'Ports':
+          // Iterate over X number of ports
+          returnData = ""
+          $.each(data,function(i,v){
+            returnData += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
+          })
+          break;
+        case 'Names':
+          // Iterate over X number of names
+          returnData = ""
+          $.each(data,function(i,v){
+            returnData += v
+          })
+          break;
+        default:
+          returnData = "NO MATCH"
+      }
+      return returnData
+    } else {
+      return "NA"
+    }
+
+  }
   table.empty();
   // Build headers
   var columnCount = 0;
@@ -485,81 +484,86 @@ var mod = {
       var thisSection = host.find('section');
       var thisMod = host.find('[data-mod="containers"]')
       var table = thisMod.find('[data-table="containers"]');
-
-      // Update the host Status
       var hostStatusBadge = host.find('[data-value="hostStatus"]').parent();
+      // Update the table if data was returned and not paused
       if (data) {
-        // thisSection.removeClass('placeholder');
-        hostStatusBadge.removeClass('cRed').addClass('cGreen').attr('title','Agent Healthy');
-        hostStatusBadge.children('span').text('done');
-        thisSection.removeClass('placeholder');
+        if (thisMod.attr('data-paused') == 'false') {
+          // Enable the pause button if previously disabled
+          thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
+          // Update the host status
+          hostStatusBadge.removeClass('cRed').addClass('cGreen').attr('title','Agent Healthy');
+          hostStatusBadge.children('span').text('done');
+          thisSection.removeClass('placeholder');
+          var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status'];
+          // Disable container buttons
+          thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
+          // Populate table with data
+          buildTable(hostId,table,data,columns,10)
+          // Get counts
+          countTotal = data.length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
+          $.each(data,function(i,v){
+            if (v['State'].indexOf('running') >= 0) {countRunning += 1};
+            if (v['State'].indexOf('exited') >= 0) {countExited += 1};
+            if (v['State'].indexOf('starting') >= 0) {countStarting += 1};
+            if (v['Status'].indexOf('(healthy)') >= 0) {countHealthy += 1};
+            if (v['Status'].indexOf('(unhealthy)') >= 0) {countUnhealthy += 1};
+          })
+          // Update totals badge
+          thisMod.find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
+          thisMod.find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
+          thisMod.find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
+          thisMod.find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
+          thisMod.find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
+          thisMod.find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
+          // Style the table
+          table.find('.cell[data-column="State"]').each(function(){
+            if ($(this).text().indexOf('exited') >= 0) {$(this).addClass('exited')}
+            if ($(this).text().indexOf('running') >= 0) {$(this).addClass('running')}
+          })
+          table.find('.cell[data-column="Status"]').each(function(){
+            if ($(this).text().indexOf('healthy') >= 0) {$(this).addClass('healthy')}
+            if ($(this).text().indexOf('unhealthy') >= 0) {$(this).addClass('unhealthy')}
+            if ($(this).text().indexOf('Exited') >= 0) {$(this).addClass('exited')}
+          })
+          // If page not set, deafult to 1
+          var currentPage = thisMod.find('[data-value="currentPage"]').text();
+          if ( ! currentPage ) {
+            thisMod.find('[data-value="currentPage"]').text(1);
+            table.find('.cell[data-page="1"]').show();
+          } else {
+            thisMod.find('[data-value="currentPage"]').text(parseInt(currentPage));
+            table.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
+          }
+          // Apply any filters that may be applied
+          var tableFilter = table.attr('data-filter');
+          if ( tableFilter ) {
+            mod.containers.filter(tableFilter,table)
+          }
+          // Row select
+          table.find('.cell').click(function(){
+            var row = $(this).attr('data-row');
+            var page = $(this).attr('data-page');
+            $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
+            var selectedCells = table.children('.cell.selected[data-column="Id"]');
+            // If more than one container selected, disable log/inspect/top
+            if ( selectedCells.length > 1 ) {
+              thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
+            } else {
+              thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', false);
+            }
+          })
+        }
       } else {
+        // If no data reieved assume agent offline
+        thisMod.attr('data-paused','false');
+        thisMod.find('[data-fn="togglePause"]').prop('disabled',true);
+        // Update host status
         hostStatusBadge.removeClass('cGreen').addClass('cRed').attr('title','Agent Unhealthy');
         hostStatusBadge.children('span').text('clear');
         thisSection.addClass('placeholder')
         table.text('Unable to connect to host').css('grid-template-columns','auto');
-      }
-      // Update the table if data was returned and not paused
-      if (data && thisMod.attr('data-paused') == 'false') {
-        // console.log(table,data);
-        var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status'];
         // Disable container buttons
         thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
-        // Populate table with data
-        buildTable(hostId,table,data,columns,10)
-        // Get counts
-        countTotal = data.length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
-        $.each(data,function(i,v){
-          if (v['State'].indexOf('running') >= 0) {countRunning += 1};
-          if (v['State'].indexOf('exited') >= 0) {countExited += 1};
-          if (v['State'].indexOf('starting') >= 0) {countStarting += 1};
-          if (v['Status'].indexOf('(healthy)') >= 0) {countHealthy += 1};
-          if (v['Status'].indexOf('(unhealthy)') >= 0) {countUnhealthy += 1};
-        })
-        // Update totals badge
-        thisMod.find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
-        thisMod.find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
-        thisMod.find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
-        thisMod.find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
-        thisMod.find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
-        thisMod.find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
-        // Style the table
-        table.find('.cell[data-column="State"]').each(function(){
-          if ($(this).text().indexOf('exited') >= 0) {$(this).addClass('exited')}
-          if ($(this).text().indexOf('running') >= 0) {$(this).addClass('running')}
-        })
-        table.find('.cell[data-column="Status"]').each(function(){
-          if ($(this).text().indexOf('healthy') >= 0) {$(this).addClass('healthy')}
-          if ($(this).text().indexOf('unhealthy') >= 0) {$(this).addClass('unhealthy')}
-          if ($(this).text().indexOf('Exited') >= 0) {$(this).addClass('exited')}
-        })
-        // If page not set, deafult to 1
-        var currentPage = thisMod.find('[data-value="currentPage"]').text();
-        if ( ! currentPage ) {
-          thisMod.find('[data-value="currentPage"]').text(1);
-          table.find('.cell[data-page="1"]').show();
-        } else {
-          thisMod.find('[data-value="currentPage"]').text(parseInt(currentPage));
-          table.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
-        }
-        // Apply any filters that may be applied
-        var tableFilter = table.attr('data-filter');
-        if ( tableFilter ) {
-          mod.containers.filter(tableFilter,table)
-        }
-        // Row select
-        table.find('.cell').click(function(){
-          var row = $(this).attr('data-row');
-          var page = $(this).attr('data-page');
-          $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
-          var selectedCells = table.children('.cell.selected[data-column="Id"]');
-          // If more than one container selected, disable log/inspect/top
-          if ( selectedCells.length > 1 ) {
-            thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
-          } else {
-            thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', false);
-          }
-        })
       }
     },
     filter: function(query,table){
@@ -1052,13 +1056,20 @@ window.setInterval(function(){
 
 // Server Requests
 function serverRequest(request){
-  hosts = []
-  $('.host').each(function(){
-    var hostId = $(this).attr('data-hostId');
-    hosts.push(hostId)
-  })
-  request = {'request':request,'data':hosts}
-  // console.log('serverRequest:',request);
+  switch (request) {
+    case 'dkrDetails':
+        var hosts = []
+        $('.host').each(function(){
+          var hostId = $(this).attr('data-hostId');
+          hosts.push(hostId)
+        })
+        request = {'request':request,'data':hosts}
+      break;
+    case 'dashboardHosts':
+      var dashboardId = $('.dashboard').attr('data-dashboardId');
+      break;
+  }
+
   socket.emit('serverRequest', request);
 }
 

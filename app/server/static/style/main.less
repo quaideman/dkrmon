@@ -245,47 +245,14 @@ footer {
     section {
       padding: 0;
       height: 350px;
-      // overflow: auto;
-      // position: relative;
       &.placeholder {
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 20px;
       }
-      [data-table="containers"] {
-        display: grid;
-        grid-auto-flow: dense;
-        // grid-template-columns: repeat(16,1fr);
-        .cell, .cell-head {
-          padding: 8px;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-          overflow: hidden;
-          cursor: pointer;
-        }
-        .cell-head {
-          font-weight: bold;
-          font-family: @f1;
-          background-color: lighten(@c1,20%);
-          // border-bottom: 2px solid lighten(@c1,20%);
-          text-transform: uppercase;
-          position: sticky;
-          top: 0;
-          display: initial;
-        }
+      [data-table] {
         .cell {
-          display: none;
-          font-family: @f2;
-          // transition: all 0.2s;
-          &.hovered {
-            background-color: lighten(@c1,15%);
-            color: white;
-          }
-          &.selected {
-            background-color: lighten(@c1,25%);
-            color: white;
-          }
           &.exited {
             color: @cYellow;
           }
@@ -683,119 +650,130 @@ button {
   display: none !important;
 }
 
-// tables
+// Tables
 [data-table] {
-  .row {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: no-wrap;
-    width: 100%;
-    .column {
-      flex-grow: 0;
-      flex-shrink: 0;
-      vertical-align: top;
-      padding: 0 @padding / 2;
-    }
+  display: grid;
+  grid-auto-flow: dense;
+  .cell, .cell-head {
+    padding: 8px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    cursor: pointer;
   }
-  &[data-table="volumes"] {
-    .row {
-      .column {
-        width: 20%;
-      }
+  .cell-head {
+    font-weight: bold;
+    font-family: @f1;
+    background-color: lighten(@c1,20%);
+    text-transform: uppercase;
+    position: sticky;
+    top: 0;
+    display: initial;
+  }
+  .cell {
+    display: none;
+    font-family: @f2;
+    &.hovered {
+      background-color: lighten(@c1,15%);
+      color: white;
+    }
+    &.selected {
+      background-color: lighten(@c1,25%);
+      color: white;
     }
   }
 }
 
 // Tabulator
-.tabulator {
-  font-family: @f2;
-  font-size: 12px;
-  background-color: lighten(@c1, 10%);
-  border: 0;
-  .tabulator-header {
-    background-color: lighten(@c1, 20%);
-    color: white;
-    border: 0;
-    .tabulator-header-filter {
-      input {
-        border: 0;
-        background-color: lighten(@c1, 25%);
-        color: white;
-        font-weight: normal;
-        font-size: 10px;
-      }
-    }
-    .tabulator-col {
-      background-color: lighten(@c1, 20%);
-      border: 0;
-      &.tabulator-sortable {
-        &:hover {
-          background-color: lighten(@c1, 15%);
-        }
-        .tabulator-col-content {
-          padding: @padding / 2;
-          .tabulator-col-title {
-            font-family: @f1;
-            font-weight: 400;
-          }
-          .tabulator-arrow {
-            top: @padding;
-            border-bottom-color: white !important;
-            &:active {
-              border-bottom-color: white !important;
-            }
-          }
-        }
-      }
-    }
-  }
-  .tabulator-tableHolder {
-    .tabulator-placeholder {
-      // position: inherit;
-    }
-    .tabulator-table {
-      .tabulator-row {
-        background-color: lighten(@c1, 10%);
-        color: white;
-        &.tabulator-row-even {
-          background-color: lighten(@c1, 7%);
-        }
-        &.tabulator-selectable {
-          //transition: all 0.3s;
-          &:hover {
-            background-color: lighten(@c1,25%);
-          }
-        }
-        &.selected {
-          color: white;
-          background-color: darken(@c1,5%);
-        }
-        .tabulator-cell {
-          border: 0;
-          padding: 8px;
-
-        }
-      }
-    }
-  }
-  .tabulator-footer {
-    background-color: lighten(@c1, 20%);
-    border: 0;
-    padding: 5px;
-    .tabulator-paginator {
-
-      .tabulator-page {
-        color: white;
-        border: 0;
-        &.active {
-          color: red;
-        }
-      }
-      .tabulator-pages {
-        display: inline-block !important;
-      }
-    }
-
-  }
-
-}
+// .tabulator {
+//   font-family: @f2;
+//   font-size: 12px;
+//   background-color: lighten(@c1, 10%);
+//   border: 0;
+//   .tabulator-header {
+//     background-color: lighten(@c1, 20%);
+//     color: white;
+//     border: 0;
+//     .tabulator-header-filter {
+//       input {
+//         border: 0;
+//         background-color: lighten(@c1, 25%);
+//         color: white;
+//         font-weight: normal;
+//         font-size: 10px;
+//       }
+//     }
+//     .tabulator-col {
+//       background-color: lighten(@c1, 20%);
+//       border: 0;
+//       &.tabulator-sortable {
+//         &:hover {
+//           background-color: lighten(@c1, 15%);
+//         }
+//         .tabulator-col-content {
+//           padding: @padding / 2;
+//           .tabulator-col-title {
+//             font-family: @f1;
+//             font-weight: 400;
+//           }
+//           .tabulator-arrow {
+//             top: @padding;
+//             border-bottom-color: white !important;
+//             &:active {
+//               border-bottom-color: white !important;
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
+//   .tabulator-tableHolder {
+//     .tabulator-placeholder {
+//       // position: inherit;
+//     }
+//     .tabulator-table {
+//       .tabulator-row {
+//         background-color: lighten(@c1, 10%);
+//         color: white;
+//         &.tabulator-row-even {
+//           background-color: lighten(@c1, 7%);
+//         }
+//         &.tabulator-selectable {
+//           //transition: all 0.3s;
+//           &:hover {
+//             background-color: lighten(@c1,25%);
+//           }
+//         }
+//         &.selected {
+//           color: white;
+//           background-color: darken(@c1,5%);
+//         }
+//         .tabulator-cell {
+//           border: 0;
+//           padding: 8px;
+//
+//         }
+//       }
+//     }
+//   }
+//   .tabulator-footer {
+//     background-color: lighten(@c1, 20%);
+//     border: 0;
+//     padding: 5px;
+//     .tabulator-paginator {
+//
+//       .tabulator-page {
+//         color: white;
+//         border: 0;
+//         &.active {
+//           color: red;
+//         }
+//       }
+//       .tabulator-pages {
+//         display: inline-block !important;
+//       }
+//     }
+//
+//   }
+//
+// }
