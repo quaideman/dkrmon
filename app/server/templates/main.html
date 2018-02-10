@@ -5,7 +5,7 @@
   </head>
 
   <body>
-    <div class="dashboard">
+    <div class="dashboard" data-dashboard="{{ dashboard }}">
       {% include 'dashboardHeader.html' %}
       {% for host in hosts %}
         {% include 'host.html' %}

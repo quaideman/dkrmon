@@ -42,10 +42,11 @@ def startAgent():
                 clientsocket,addr = serversocket.accept()
                 rcvPayload = socketRcv(clientsocket)
                 rcvPayload = json.loads(rcvPayload)
-                log(('INFO','Request for',rcvPayload['request']))
-                sndPayload = myRequests(rcvPayload['request'])
+                log(('INFO','Request received',rcvPayload))
+                sndPayload = myRequests(rcvPayload)
                 sndPayload = json.dumps(sndPayload)
                 sndPayload = sndPayload.encode()
+                # log(('====DEBUG====','sndPayload',sndPayload))
                 socketSnd(clientsocket, sndPayload)
             except:
                 log(('ERR','Agent exited abnormally'))
@@ -55,30 +56,44 @@ def startAgent():
     except:
         log(('ERR','Agent failed to start or exited abnormally'))
 
-def myRequests(request):
+def myRequests(rcvPayload):
     ''' Request handlers for requests made against this agent '''
-    def status():
-        returnData = {'status':'OK'}
-        return returnData
-
-    def dkrDetails():
-        # dkrClient = docker.DockerClient(base_url='unix://dkrmon/socket/docker.sock')
-        # dkrClient = docker.from_env()
-
+    # def status():
+    #     returnData = {'status':'OK'}
+    #     return returnData
+    def dkrDetails(resource):
         returnData = dkrClient.df()
+        return returnData[resource]
+
+    def containerAction(rcvPayload):
+        print('Running containerAction',rcvPayload)
+        action = rcvPayload['request']
+        returnData = []
+        for container in rcvPayload['containers']:
+            print('Running',action,container)
+            try:
+                if action == 'containerStop': dkrClient.containers.get(container).stop()
+                if action == 'containerStart': dkrClient.containers.get(container).start()
+                if action == 'containerRestart': dkrClient.containers.get(container).restart()
+            except:
+                returnData.append({'result':'error', 'container': container})
+            else:
+                log(('INFO',action,container))
+                returnData.append({'result':'success', 'container': container})
         return returnData
+
     ## Switch the requests
     try:
-        if request == 'status':
-            return status()
-        elif request == 'dkrDetails':
-            return dkrDetails()
+        if rcvPayload['request'] == 'containers':
+            rcvPayload['data'] = dkrDetails('Containers')
+            rcvPayload['result'] = 'success'
+            return rcvPayload
+        elif rcvPayload['request'] == 'containerStop' or rcvPayload['request'] == 'containerStart' or rcvPayload['request'] == 'containerRestart':
+            rcvPayload['data'] = containerAction(rcvPayload)
+            return rcvPayload
     except:
-        if request == 'status':
-            return {'request':'status','result':'error','message': 'Failed to get my status'}
-        elif request == 'dkrDetails':
-            return {'request':'dkrDetails','result':'error','message': 'Unable to communicate with Docker daemon'}
-        log(('ERR','myRequests','Something went wrong'))
+        rcvPayload['result'] = 'error'
+        return rcvPayload
 
 def prereqs():
     ''' Check prereqs before starting the agent '''

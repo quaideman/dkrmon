@@ -1,5 +1,6 @@
 var socket = io.connect('http://' + document.domain + ':' + location.port);
 
+
 var ui = {
   defaults: function(){
     var mods = $('.mod');
@@ -256,7 +257,7 @@ var dashboardControls = {
   },
 }
 
-function buildTable(hostId,table,data,columns,pageLimit){
+function buildTable(table,data,columns,pageLimit){
   function cellFormat(key,data){
     //  Formats table data cells when they contain objects
     // console.log(key,data);
@@ -429,9 +430,11 @@ var mod = {
     },
   },
   containers : {
-    load: function(hostId,data) {
+    load: function() {
       // Stuff to do on initial load. Just once
       $('.host [data-mod="containers"]').each(function(){
+        var thisDashboard = $('.dashboard').attr('data-dashboard');
+        var thisHost = $(this).parents('.host');
         var thisMod = $(this);
         var table = thisMod.find('[data-table]');
         var currentPageBadge = thisMod.find('[data-value="currentPage"]');
@@ -468,102 +471,111 @@ var mod = {
         })
         // Attach events to control buttons
         thisMod.find('[data-fn^="container"]').click(function(){
+          var thisFn = $(this).attr('data-fn')
+          // var thisHost = $(this).parents('.host');
           // Get selected containers
           var selectedCells = table.children('.cell.selected[data-column="Id"]');
           var selectedContainers = []
           selectedCells.each(function(){
             selectedContainers.push($(this).text());
           })
-          console.log(selectedContainers);
+          // Make request
+          thisMod.attr('data-paused','false')
+          serverRequest({'request': thisFn, 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host'),'containers': selectedContainers})
         })
+        // Make request for data
+        serverRequest({'request': 'containers', 'dashboard': thisDashboard, 'host': thisHost.attr('data-host')});
       })
-
     },
-    populate: function(hostId,data){
-      var host = $('[data-hostId="'+hostId+'"]');
-      var thisSection = host.find('section');
-      var thisMod = host.find('[data-mod="containers"]')
-      var table = thisMod.find('[data-table="containers"]');
-      var hostStatusBadge = host.find('[data-value="hostStatus"]').parent();
-      // Update the table if data was returned and not paused
-      if (data) {
-        if (thisMod.attr('data-paused') == 'false') {
-          // Enable the pause button if previously disabled
-          thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
-          // Update the host status
-          hostStatusBadge.removeClass('cRed').addClass('cGreen').attr('title','Agent Healthy');
-          hostStatusBadge.children('span').text('done');
-          thisSection.removeClass('placeholder');
-          var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status'];
+    populate: function(thisHost,data){
+      var thisDashboard = $('.dashboard').attr('data-dashboard');
+      var thisMod = thisHost.find('[data-mod="containers"]');
+      var thisSection = thisMod.find('section');
+      var table = thisSection.find('[data-table]');
+      var hostStatusBadge = thisHost.find('[data-value="hostStatus"]').parent();
+      // If data is not present, make a request
+      if (data == undefined) {
+        serverRequest({'request': 'containers', 'dashboard': thisDashboard, 'host': thisHost.attr('data-host')});
+      } else {
+        if (data['data']) {
+          if (thisMod.attr('data-paused') == 'false') {
+            // Enable the pause button if previously disabled
+            thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
+            // Update the host status
+            hostStatusBadge.removeClass('cRed').addClass('cGreen').attr('title','Agent Healthy');
+            hostStatusBadge.children('span').text('done');
+            thisSection.removeClass('placeholder');
+            var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status'];
+            // Disable container buttons
+            thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
+            // Populate table with data
+            buildTable(table,data['data'],columns,10)
+            // Get counts
+            countTotal = data['data'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
+            $.each(data['data'],function(i,v){
+              if (v['State'].indexOf('running') >= 0) {countRunning += 1};
+              if (v['State'].indexOf('exited') >= 0) {countExited += 1};
+              if (v['State'].indexOf('starting') >= 0) {countStarting += 1};
+              if (v['Status'].indexOf('(healthy)') >= 0) {countHealthy += 1};
+              if (v['Status'].indexOf('(unhealthy)') >= 0) {countUnhealthy += 1};
+            })
+            // Update totals badge
+            thisMod.find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
+            thisMod.find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
+            thisMod.find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
+            thisMod.find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
+            thisMod.find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
+            thisMod.find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
+            // Style the table
+            table.find('.cell[data-column="State"]').each(function(){
+              if ($(this).text().indexOf('exited') >= 0) {$(this).addClass('exited')}
+              if ($(this).text().indexOf('running') >= 0) {$(this).addClass('running')}
+            })
+            table.find('.cell[data-column="Status"]').each(function(){
+              if ($(this).text().indexOf('healthy') >= 0) {$(this).addClass('healthy')}
+              if ($(this).text().indexOf('unhealthy') >= 0) {$(this).addClass('unhealthy')}
+              if ($(this).text().indexOf('Exited') >= 0) {$(this).addClass('exited')}
+            })
+            // If page not set, deafult to 1
+            var currentPage = thisMod.find('[data-value="currentPage"]').text();
+            if ( ! currentPage ) {
+              thisMod.find('[data-value="currentPage"]').text(1);
+              table.find('.cell[data-page="1"]').show();
+            } else {
+              thisMod.find('[data-value="currentPage"]').text(parseInt(currentPage));
+              table.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
+            }
+            // Apply any filters that may be applied
+            var tableFilter = table.attr('data-filter');
+            if ( tableFilter ) {
+              mod.containers.filter(tableFilter,table)
+            }
+            // Row select
+            table.find('.cell').click(function(){
+              var row = $(this).attr('data-row');
+              var page = $(this).attr('data-page');
+              $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
+              var selectedCells = table.children('.cell.selected[data-column="Id"]');
+              // If more than one container selected, disable log/inspect/top
+              if ( selectedCells.length > 1 ) {
+                thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
+              } else {
+                thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', false);
+              }
+            })
+          }
+        } else {
+          // If no data reieved assume agent offline
+          thisMod.attr('data-paused','false');
+          thisMod.find('[data-fn="togglePause"]').prop('disabled',true);
+          // Update host status
+          hostStatusBadge.removeClass('cGreen').addClass('cRed').attr('title','Agent Unhealthy');
+          hostStatusBadge.children('span').text('clear');
+          thisSection.addClass('placeholder')
+          table.text('Unable to connect to host').css('grid-template-columns','auto');
           // Disable container buttons
           thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
-          // Populate table with data
-          buildTable(hostId,table,data,columns,10)
-          // Get counts
-          countTotal = data.length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
-          $.each(data,function(i,v){
-            if (v['State'].indexOf('running') >= 0) {countRunning += 1};
-            if (v['State'].indexOf('exited') >= 0) {countExited += 1};
-            if (v['State'].indexOf('starting') >= 0) {countStarting += 1};
-            if (v['Status'].indexOf('(healthy)') >= 0) {countHealthy += 1};
-            if (v['Status'].indexOf('(unhealthy)') >= 0) {countUnhealthy += 1};
-          })
-          // Update totals badge
-          thisMod.find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
-          thisMod.find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
-          thisMod.find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
-          thisMod.find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
-          thisMod.find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
-          thisMod.find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
-          // Style the table
-          table.find('.cell[data-column="State"]').each(function(){
-            if ($(this).text().indexOf('exited') >= 0) {$(this).addClass('exited')}
-            if ($(this).text().indexOf('running') >= 0) {$(this).addClass('running')}
-          })
-          table.find('.cell[data-column="Status"]').each(function(){
-            if ($(this).text().indexOf('healthy') >= 0) {$(this).addClass('healthy')}
-            if ($(this).text().indexOf('unhealthy') >= 0) {$(this).addClass('unhealthy')}
-            if ($(this).text().indexOf('Exited') >= 0) {$(this).addClass('exited')}
-          })
-          // If page not set, deafult to 1
-          var currentPage = thisMod.find('[data-value="currentPage"]').text();
-          if ( ! currentPage ) {
-            thisMod.find('[data-value="currentPage"]').text(1);
-            table.find('.cell[data-page="1"]').show();
-          } else {
-            thisMod.find('[data-value="currentPage"]').text(parseInt(currentPage));
-            table.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
-          }
-          // Apply any filters that may be applied
-          var tableFilter = table.attr('data-filter');
-          if ( tableFilter ) {
-            mod.containers.filter(tableFilter,table)
-          }
-          // Row select
-          table.find('.cell').click(function(){
-            var row = $(this).attr('data-row');
-            var page = $(this).attr('data-page');
-            $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
-            var selectedCells = table.children('.cell.selected[data-column="Id"]');
-            // If more than one container selected, disable log/inspect/top
-            if ( selectedCells.length > 1 ) {
-              thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
-            } else {
-              thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', false);
-            }
-          })
         }
-      } else {
-        // If no data reieved assume agent offline
-        thisMod.attr('data-paused','false');
-        thisMod.find('[data-fn="togglePause"]').prop('disabled',true);
-        // Update host status
-        hostStatusBadge.removeClass('cGreen').addClass('cRed').attr('title','Agent Unhealthy');
-        hostStatusBadge.children('span').text('clear');
-        thisSection.addClass('placeholder')
-        table.text('Unable to connect to host').css('grid-template-columns','auto');
-        // Disable container buttons
-        thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
       }
     },
     filter: function(query,table){
@@ -1035,12 +1047,6 @@ $(document).ready(function(){
   ui.defaults()
   dashboardControls.load()
   mod.containers.load();
-  // Initialse modules
-  // mod.images.load()
-  // mod.volumes.load()
-  // mod.containers.load()
-  // Populate data
-  serverRequest('dkrDetails');
 })
 
 // Stuff to do on window resize
@@ -1051,40 +1057,31 @@ $(window).resize(function(){
 // Stuff to do on interval
 window.setInterval(function(){
   // ui.refresh();
-  serverRequest('dkrDetails');
+  // serverRequest('dkrDetails');
+  $('.host').each(function(){
+    mod.containers.populate($(this));
+  })
 }, 10000);
 
 // Server Requests
 function serverRequest(request){
-  switch (request) {
-    case 'dkrDetails':
-        var hosts = []
-        $('.host').each(function(){
-          var hostId = $(this).attr('data-hostId');
-          hosts.push(hostId)
-        })
-        request = {'request':request,'data':hosts}
-      break;
-    case 'dashboardHosts':
-      var dashboardId = $('.dashboard').attr('data-dashboardId');
-      break;
-  }
-
+  console.log('serverRequest',request);
   socket.emit('serverRequest', request);
 }
 
 // Server Responses
 socket.on('serverResponse', function(data) {
-  // console.log('serverResponse',data);
-  console.log("UPDATE",data);
-    if (data['request'] == 'dkrDetails') {
-      $.each(data['data'],function(){
-        var hostId = this['agentId']
-        // console.log('hostID',hostId);
-        // mod.containers.populate(hostId,this['Containers']);
-        mod.containers.populate(hostId,this['Containers']);
-        // mod.volumes.populate(hostId,this['Volumes']);
-        // mod.images.populate(hostId,this['Images']);
-      })
-    }
+  console.log("serverResponse",data);
+  var host = $('[data-host="'+data['host']+'"]');
+  switch (data['request']) {
+    case 'containers':
+      mod.containers.populate(host,data);
+      break;
+    case 'containerStop':
+    case 'containerStart':
+    case 'containerRestart':
+      mod.containers.populate(host);
+      break;
+  }
+
 });
