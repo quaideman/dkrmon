@@ -31,22 +31,25 @@ var ui = {
     if (width < 1000 && width >= 600) {return 'small'}
     if (width < 600) {return 'xsmall'}
   },
-  notify: function(result,message){
-    // Displays a notification
+  notify: function(data){
     var element = $('#notify');
-    switch(result) {
-      case "success":
-        var addClass = "success";
-        var icon = "check_circle"
-        break;
-      case "error":
-        var addClass = "error";
-        var icon = "error_outline"
-        break;
+    element.empty();
+    $.each(data,function(){
+      if (this['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
+      var html = '<div><span class="icon '+this['result']+' material-icons">'+icon+'</span><span class="message">'+this['container']+'</span></div>'
+      element.append(html);
+    })
+    element.clearQueue().fadeIn(200).delay(5000).fadeOut(200);
+  },
+  spinner: function(destroy){
+    // Show waiting spinner
+    var element = $('#spinner-wrap');
+    if (destroy == 'destroy') {
+      element.clearQueue().fadeOut(200);
+    } else {
+      element.clearQueue().fadeIn(200);
     }
-    element.clearQueue()
-      .html('<i class="icon material-icons md18">'+icon+'</i><span class="message">'+message+'</span>')
-      .removeClass('success error').addClass(addClass).fadeIn(200).delay(3000).fadeOut(200);
+
   },
 }
 
@@ -430,23 +433,22 @@ var mod = {
     },
   },
   containers : {
-    load: function() {
-      // Stuff to do on initial load. Just once
-      $('.host [data-mod="containers"]').each(function(){
-        var thisDashboard = $('.dashboard').attr('data-dashboard');
-        var thisHost = $(this).parents('.host');
-        var thisMod = $(this);
-        var table = thisMod.find('[data-table]');
-        var currentPageBadge = thisMod.find('[data-value="currentPage"]');
+    load: function(thisHost) {
+      // Load each containers module
+      var thisDashboard = $('.dashboard').attr('data-dashboard');
+      var thisMod = thisHost.find('[data-mod="containers"]');
+      var thisTable = thisMod.find('[data-table]');
+      var currentPageBadge = thisMod.find('[data-value="currentPage"]');
+      function loadControls(){
         // Pagination
         thisMod.find('[data-fn="nextPage"]').click(function(){
           var currentPage = parseInt(currentPageBadge.text());
           var nextPage = currentPage + 1;
           // Load next page if exists
-          if ( table.find('.cell[data-page="'+nextPage+'"]').length > 0 ) {
+          if ( thisTable.find('.cell[data-page="'+nextPage+'"]').length > 0 ) {
             currentPageBadge.text(nextPage)
-            table.find('.cell[data-page="'+currentPage+'"]').hide();
-            table.find('.cell[data-page="'+nextPage+'"]').show();
+            thisTable.find('.cell[data-page="'+currentPage+'"]').hide();
+            thisTable.find('.cell[data-page="'+nextPage+'"]').show();
           }
         })
         thisMod.find('[data-fn="previousPage"]').click(function(){
@@ -455,8 +457,8 @@ var mod = {
           if (currentPage > 1) {
             var prevPage = currentPage - 1;
             currentPageBadge.text(prevPage)
-            table.find('.cell[data-page="'+currentPage+'"]').hide();
-            table.find('.cell[data-page="'+prevPage+'"]').show();
+            thisTable.find('.cell[data-page="'+currentPage+'"]').hide();
+            thisTable.find('.cell[data-page="'+prevPage+'"]').show();
           }
         })
         // Filter handler
@@ -472,26 +474,27 @@ var mod = {
         // Attach events to control buttons
         thisMod.find('[data-fn^="container"]').click(function(){
           var thisFn = $(this).attr('data-fn')
-          // var thisHost = $(this).parents('.host');
           // Get selected containers
-          var selectedCells = table.children('.cell.selected[data-column="Id"]');
+          var selectedCells = thisTable.children('.cell.selected[data-column="Id"]');
           var selectedContainers = []
           selectedCells.each(function(){
             selectedContainers.push($(this).text());
           })
           // Make request
           thisMod.attr('data-paused','false')
+          if ( thisFn == 'containerLog' ) { modal.display($('[data-modal="containerLog"]')) }
           serverRequest({'request': thisFn, 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host'),'containers': selectedContainers})
         })
-        // Make request for data
-        serverRequest({'request': 'containers', 'dashboard': thisDashboard, 'host': thisHost.attr('data-host')});
-      })
+      }
+      loadControls()
+      // Make request for data
+      serverRequest({'request': 'containers', 'dashboard': thisDashboard, 'host': thisHost.attr('data-host')});
     },
     populate: function(thisHost,data){
       var thisDashboard = $('.dashboard').attr('data-dashboard');
       var thisMod = thisHost.find('[data-mod="containers"]');
       var thisSection = thisMod.find('section');
-      var table = thisSection.find('[data-table]');
+      var thisTable = thisSection.find('[data-table]');
       var hostStatusBadge = thisHost.find('[data-value="hostStatus"]').parent();
       // If data is not present, make a request
       if (data == undefined) {
@@ -509,7 +512,7 @@ var mod = {
             // Disable container buttons
             thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
             // Populate table with data
-            buildTable(table,data['data'],columns,10)
+            buildTable(thisTable,data['data'],columns,10)
             // Get counts
             countTotal = data['data'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
             $.each(data['data'],function(i,v){
@@ -527,11 +530,11 @@ var mod = {
             thisMod.find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
             thisMod.find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
             // Style the table
-            table.find('.cell[data-column="State"]').each(function(){
+            thisTable.find('.cell[data-column="State"]').each(function(){
               if ($(this).text().indexOf('exited') >= 0) {$(this).addClass('exited')}
               if ($(this).text().indexOf('running') >= 0) {$(this).addClass('running')}
             })
-            table.find('.cell[data-column="Status"]').each(function(){
+            thisTable.find('.cell[data-column="Status"]').each(function(){
               if ($(this).text().indexOf('healthy') >= 0) {$(this).addClass('healthy')}
               if ($(this).text().indexOf('unhealthy') >= 0) {$(this).addClass('unhealthy')}
               if ($(this).text().indexOf('Exited') >= 0) {$(this).addClass('exited')}
@@ -540,22 +543,22 @@ var mod = {
             var currentPage = thisMod.find('[data-value="currentPage"]').text();
             if ( ! currentPage ) {
               thisMod.find('[data-value="currentPage"]').text(1);
-              table.find('.cell[data-page="1"]').show();
+              thisTable.find('.cell[data-page="1"]').show();
             } else {
               thisMod.find('[data-value="currentPage"]').text(parseInt(currentPage));
-              table.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
+              thisTable.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
             }
             // Apply any filters that may be applied
-            var tableFilter = table.attr('data-filter');
+            var tableFilter = thisTable.attr('data-filter');
             if ( tableFilter ) {
               mod.containers.filter(tableFilter,table)
             }
             // Row select
-            table.find('.cell').click(function(){
+            thisTable.find('.cell').click(function(){
               var row = $(this).attr('data-row');
               var page = $(this).attr('data-page');
               $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
-              var selectedCells = table.children('.cell.selected[data-column="Id"]');
+              var selectedCells = thisTable.children('.cell.selected[data-column="Id"]');
               // If more than one container selected, disable log/inspect/top
               if ( selectedCells.length > 1 ) {
                 thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
@@ -572,7 +575,7 @@ var mod = {
           hostStatusBadge.removeClass('cGreen').addClass('cRed').attr('title','Agent Unhealthy');
           hostStatusBadge.children('span').text('clear');
           thisSection.addClass('placeholder')
-          table.text('Unable to connect to host').css('grid-template-columns','auto');
+          thisTable.text('Unable to connect to host').css('grid-template-columns','auto');
           // Disable container buttons
           thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
         }
@@ -706,7 +709,6 @@ var mod = {
       }
     },
     controls: function(){
-
     },
     controls2 : function(){
       var thisMod = this.elements()['mod']
@@ -1040,13 +1042,25 @@ var modal = {
     $('#modal-container').attr('data-active','false');
     trigger.parents('.modal').attr('data-active','false');
   },
+  containerLog : {
+    load : function(log){
+      var section = $('[data-modal="containerLog"] section')
+      section.empty()
+      $.each(log,function(i,v){
+        if (v) {section.append(i+' : '+v+'<br>')}
+      })
+    },
+  },
 }
 
 // Stuff to run on load
 $(document).ready(function(){
   ui.defaults()
   dashboardControls.load()
-  mod.containers.load();
+  $('.host').each(function(){
+    mod.containers.load($(this));
+  })
+
 })
 
 // Stuff to do on window resize
@@ -1059,18 +1073,20 @@ window.setInterval(function(){
   // ui.refresh();
   // serverRequest('dkrDetails');
   $('.host').each(function(){
-    mod.containers.populate($(this));
+    // mod.containers.populate($(this));
   })
 }, 10000);
 
 // Server Requests
 function serverRequest(request){
   console.log('serverRequest',request);
+  if ( request['request'] != 'containers') { ui.spinner() }
   socket.emit('serverRequest', request);
 }
 
 // Server Responses
 socket.on('serverResponse', function(data) {
+  ui.spinner('destroy');
   console.log("serverResponse",data);
   var host = $('[data-host="'+data['host']+'"]');
   switch (data['request']) {
@@ -1081,6 +1097,10 @@ socket.on('serverResponse', function(data) {
     case 'containerStart':
     case 'containerRestart':
       mod.containers.populate(host);
+      ui.notify(data['data'])
+      break;
+    case 'containerLog':
+      modal.containerLog.load(data['data'][0]['log'])
       break;
   }
 

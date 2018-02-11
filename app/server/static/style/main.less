@@ -606,6 +606,13 @@ button {
     position: relative;
     > * {padding: @padding / 2;}
     background-color: lighten(@c1,5%);
+    &[data-modal="containerLog"] {
+      width: 90%;
+      section {
+        height: 500px;
+        overflow: auto;
+      }
+    }
     width: 600px;
     &[data-active="false"] {
       display: none;
@@ -626,24 +633,62 @@ button {
 #notify {
   display: none;
   position: fixed;
-  bottom: 48px;
-  right: 48px;
+  bottom: 40px;
+  right: 40px;
   padding: @padding;
-  background: @cBlue;
+  background: darken(@c1,10%);
+  border-radius: 4px;
   color: white;
-  .icon {
-    position: inherit;
+  > div {
+    display: flex;
+    align-items: center;
+    .icon {
+      position: inherit;
+      font-family: "Material Icons";
+      font-size: 24px;
+      &.success {
+        color: @cGreen;
+      }
+      &.error {
+        color: @cRed;
+      }
+    }
+    .message {
+      padding-left: @padding;
+    }
+
   }
-  .message {
-    padding-left: 30px;
-  }
-  &.success {
-    background: darken(@cGreen, 10%);
-  }
-  &.error {
-    background: darken(@cRed, 10%);
+
+}
+
+// waiting Spinner
+@keyframes spinner { to {transform: rotate(360deg);} }
+#spinner-wrap {
+  display: none;
+  position: fixed;
+  bottom: 40px;
+  right: 40px;
+  height: 40px;
+  width: 40px;
+  border-radius: 100%;
+  background-color: darken(@c1, 10%);
+  &.spinner:before {
+    content: '';
+    box-sizing: border-box;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin-top: -10px;
+    margin-left: -10px;
+    border-radius: 50%;
+    border: 2px solid @cYellow;
+    border-top-color: darken(@c1, 10%);
+    animation: spinner .6s linear infinite;
   }
 }
+
 
 // Hide the tabulator loader. Doesn't seen to work using less nesting.
 .tabulator .tablulator-loader {

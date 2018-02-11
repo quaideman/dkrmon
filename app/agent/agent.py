@@ -58,9 +58,6 @@ def startAgent():
 
 def myRequests(rcvPayload):
     ''' Request handlers for requests made against this agent '''
-    # def status():
-    #     returnData = {'status':'OK'}
-    #     return returnData
     def dkrDetails(resource):
         returnData = dkrClient.df()
         return returnData[resource]
@@ -75,11 +72,12 @@ def myRequests(rcvPayload):
                 if action == 'containerStop': dkrClient.containers.get(container).stop()
                 if action == 'containerStart': dkrClient.containers.get(container).start()
                 if action == 'containerRestart': dkrClient.containers.get(container).restart()
+                if action == 'containerLog': data = dkrClient.containers.get(container).logs().decode("utf-8").split('\n')
             except:
                 returnData.append({'result':'error', 'container': container})
             else:
                 log(('INFO',action,container))
-                returnData.append({'result':'success', 'container': container})
+                returnData.append({'result':'success', 'container': container, 'log': data})
         return returnData
 
     ## Switch the requests
@@ -88,7 +86,7 @@ def myRequests(rcvPayload):
             rcvPayload['data'] = dkrDetails('Containers')
             rcvPayload['result'] = 'success'
             return rcvPayload
-        elif rcvPayload['request'] == 'containerStop' or rcvPayload['request'] == 'containerStart' or rcvPayload['request'] == 'containerRestart':
+        else:
             rcvPayload['data'] = containerAction(rcvPayload)
             return rcvPayload
     except:
