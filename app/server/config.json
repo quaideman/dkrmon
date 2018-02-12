@@ -1,15 +1,17 @@
 {
   "dashboards": [
     {
-      "name":"Sarahs Dashboard","hosts": [
+      "name":"ecase.aws","hosts": [
         {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
         {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
       ]
     },
     {
-      "name":"Dashboard 2","hosts": [
-        {"name":"Server One","ip":"192.168.1.191","port":"5000"},
-        {"name":"Server Two","ip":"192.168.1.192","port":"5000"}
+      "name":"fiviumops.aws","hosts": [
+        {"name":"Bob","ip":"192.168.1.191","port":"5000"},
+        {"name":"Mary","ip":"192.168.1.192","port":"5000"},
+        {"name":"Charlie","ip":"192.168.1.191","port":"5000"},
+        {"name":"Sinclaire","ip":"192.168.1.192","port":"5000"}
       ]
     }
   ]

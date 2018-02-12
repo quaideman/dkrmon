@@ -92,7 +92,6 @@ header {
       }
     }
   }
-
   &[data-header="host"] {
     .header-title {
       color: white;
@@ -108,7 +107,6 @@ header {
       }
     }
   }
-
 }
 footer {
   display: flex;
@@ -125,6 +123,7 @@ footer {
   }
 }
 .dashboard {
+  position: relative;
   // display: grid;
   // grid-gap: @padding;
   // grid-template-columns: 1fr;
@@ -142,7 +141,22 @@ footer {
       font-size: 20px;
     }
   }
-
+  .dashboard-selector {
+    position: absolute;
+    height: 0;
+    top:34px;
+    right: 0;
+    width: 300px;
+    background: darken(@c1,5%);
+    z-index: 10;
+    transition: all 0.2s;
+    overflow: hidden;
+    &[data-active="true"] {
+      height: 100px;
+      border: 2px solid @cYellow;
+      border-top: 0;
+    }
+  }
 }
 .host {
   > header, .mod > header {
@@ -585,6 +599,17 @@ button {
     letter-spacing: 1px;
   }
 }
+pre {
+  font-size: 14px;
+  code {
+    &.json {
+      .key {color: #E06C75;}
+      .boolean {color: #43B6C2;}
+      .number {color: #C68D4F;}
+      .string {color: #8DC379;}
+    }
+  }
+}
 
 // Modal
 #modal-container {
@@ -606,7 +631,7 @@ button {
     position: relative;
     > * {padding: @padding / 2;}
     background-color: lighten(@c1,5%);
-    &[data-modal="containerLog"] {
+    &[data-modal="containerLog"],&[data-modal="containerInspect"] {
       width: 90%;
       section {
         height: 500px;

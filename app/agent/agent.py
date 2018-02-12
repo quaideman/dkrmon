@@ -61,33 +61,32 @@ def myRequests(rcvPayload):
     def dkrDetails(resource):
         returnData = dkrClient.df()
         return returnData[resource]
-
-    def containerAction(rcvPayload):
-        print('Running containerAction',rcvPayload)
-        action = rcvPayload['request']
-        returnData = []
-        for container in rcvPayload['containers']:
-            print('Running',action,container)
-            try:
-                if action == 'containerStop': dkrClient.containers.get(container).stop()
-                if action == 'containerStart': dkrClient.containers.get(container).start()
-                if action == 'containerRestart': dkrClient.containers.get(container).restart()
-                if action == 'containerLog': data = dkrClient.containers.get(container).logs().decode("utf-8").split('\n')
-            except:
-                returnData.append({'result':'error', 'container': container})
-            else:
-                log(('INFO',action,container))
-                returnData.append({'result':'success', 'container': container, 'log': data})
-        return returnData
-
     ## Switch the requests
+    request = rcvPayload['request']
     try:
-        if rcvPayload['request'] == 'containers':
+        if request == 'containers':
             rcvPayload['data'] = dkrDetails('Containers')
             rcvPayload['result'] = 'success'
             return rcvPayload
-        else:
-            rcvPayload['data'] = containerAction(rcvPayload)
+        if request == 'containerLog':
+            rcvPayload['log'] = dkrClient.containers.get(rcvPayload['container']).logs().decode("utf-8").split('\n')
+            rcvPayload['result'] = 'success'
+            return rcvPayload
+        if request == 'containerStop' or request == 'containerStart' or request == 'containerRestart':
+            returnData = []
+            for container in rcvPayload['containers']:
+                try:
+                    if request == 'containerStop': dkrClient.containers.get(container).stop()
+                    if request == 'containerStart': dkrClient.containers.get(container).start()
+                    if request == 'containerRestart': dkrClient.containers.get(container).restart()
+                    returnData.append({'result':'success', 'container': container})
+                except:
+                    returnData.append({'result':'error', 'container': container})
+            rcvPayload['data'] = returnData
+            return rcvPayload
+        if request == 'containerInspect':
+            rcvPayload['details'] = dkrClient.containers.get(rcvPayload['container']).attrs
+            rcvPayload['result'] = 'success'
             return rcvPayload
     except:
         rcvPayload['result'] = 'error'

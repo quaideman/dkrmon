@@ -1,5 +1,5 @@
 ## Import required modules
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from threading import Lock
 from flask_socketio import SocketIO, send, emit
 import socket,time,json,struct,os,sys,sqlite3,datetime,re,logging
@@ -190,14 +190,20 @@ def log(tuple):
 
 ## Routes
 @app.route('/')
-def loadMain():
+def loadDefault():
     # agents = []
     ## Get just the agent names
     # for agent in dbAgentGetAll()['data']:
     #     agents.append(agent['name'])
     # return render_template('main.html', hosts=dbAgentGetAll()['data'])
     dashboards = getDashboard()
-    return render_template('main.html', dashboard=dashboards[0]['name'], hosts=dashboards[0]['hosts'])
+    return render_template('main.html', dashboards=dashboards, dashboard=dashboards[0]['name'], hosts=dashboards[0]['hosts'])
+
+@app.route('/dashboard/<dashboard>')
+def loadDashboard(dashboard):
+    dashboards = getDashboard()
+    dashboard = getDashboard(dashboard)
+    return render_template('main.html', dashboards=dashboards, dashboard=dashboard['name'], hosts=dashboard['hosts'])
 
 ## Websockets
 # @socketio.on('agentRequest')
@@ -399,8 +405,11 @@ def hostRequest(request):
 def serverRequest(request):
     ''' Client requests against this server '''
     log(('INFO','Client request',str(request)))
-    returnData = hostRequest(request)
-    emit('serverResponse', returnData)
+    if request['request'] == 'dashboardSelect':
+        loadDashboard(request['dashboard'])
+    else:
+        returnData = hostRequest(request)
+        emit('serverResponse', returnData)
 
 ### End New Stuff
 # def PushDkrDetails():

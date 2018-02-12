@@ -1,9 +1,14 @@
 <header data-header="dashboard">
   <div class="header-title">{{ dashboard }}</div>
   <div class="header-controls">
-    <button class="btn1" data-fn="dashboardSelection" title="Change Dashboard"><span class="icn md-18">dashboard</span></button>
+    <button class="btn1" data-fn="dashboardSelect" title="Change Dashboard"><span class="icn md-18">dashboard</span></button>
     <button class="btn1" data-fn="dashboardSaveLayout" title="Save Dashboard Layout"><span class="icn md-18">save</span></button>
     <button class="btn1" data-fn="dashboardExpand" title="Expand Dashboard"><span class="icn md-24">expand_more</span></button>
     <button class="btn1" data-fn="dashboardCollapse" title="Collapse Dashboard"><span class="icn md-24">expand_less</span></button>
   </div>
 </header>
+<div class="dashboard-selector">
+  {% for dashboard in dashboards %}
+    <div>{{ dashboard['name'] }}</div>
+  {% endfor %}
+</div>
