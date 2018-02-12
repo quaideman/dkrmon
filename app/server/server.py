@@ -405,11 +405,8 @@ def hostRequest(request):
 def serverRequest(request):
     ''' Client requests against this server '''
     log(('INFO','Client request',str(request)))
-    if request['request'] == 'dashboardSelect':
-        loadDashboard(request['dashboard'])
-    else:
-        returnData = hostRequest(request)
-        emit('serverResponse', returnData)
+    returnData = hostRequest(request)
+    emit('serverResponse', returnData)
 
 ### End New Stuff
 # def PushDkrDetails():
