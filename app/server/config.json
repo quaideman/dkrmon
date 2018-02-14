@@ -13,6 +13,36 @@
         {"name":"Charlie","ip":"192.168.1.191","port":"5000"},
         {"name":"Sinclaire","ip":"192.168.1.192","port":"5000"}
       ]
+    },
+    {
+      "name":"Another dashboard","hosts": [
+        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
+        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+      ]
+    },
+    {
+      "name":"Some other","hosts": [
+        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
+        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+      ]
+    },
+    {
+      "name":"Cars and Motors","hosts": [
+        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
+        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+      ]
+    },
+    {
+      "name":"Example Dash","hosts": [
+        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
+        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+      ]
+    },
+    {
+      "name":"Just one more","hosts": [
+        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
+        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+      ]
     }
   ]
 }

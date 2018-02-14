@@ -152,29 +152,43 @@ footer {
     transition: all 0.2s;
     overflow: hidden;
     &[data-active="true"] {
-      height: 100px;
-      border: 2px solid @cYellow;
+      height: initial;
+      // border: 2px solid @cYellow;
       border-top: 0;
+    }
+    > div {
+      cursor: pointer;
+      padding: @padding / 2;
+      &:hover {
+        background-color: lighten(@c1, 5%);
+      }
     }
   }
 }
 .host {
-  > header, .mod > header {
-    grid-area: header;
-  }
+  // > header, .mod > header {
+  //   grid-area: header;
+  // }
   > header {
+    margin-bottom: @padding /2;
     .header-title {
       text-transform: none;
       font-size: 16px;
+    }
+    .header-controls {
+      button {
+        .icn {font-size: 16px;}
+
+      }
     }
   }
   overflow: hidden;
   border: 1px solid lighten(@c1,10%);
   padding: @padding / 2;
   background-color: lighten(@c1,5%);
-  display: grid;
-  grid-gap: @padding;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  // display: grid;
+  // grid-gap: @padding;
+  // grid-template-columns: 1fr 1fr 1fr 1fr;
   margin-bottom: @padding;
   &:last-of-type {
     margin-bottom: 0
@@ -196,52 +210,50 @@ footer {
   &[data-collapsed="true"] {
     section, footer {height: 0 !important; padding: 0;}
   }
-  &[data-mod="hostDetails"] {grid-area: hostDetails;}
-  &[data-mod="hostCpu"] {grid-area: hostCpu;}
-  &[data-mod="hostMemory"] {grid-area: hostMemory;}
-  &[data-mod="hostStorage"] {grid-area: hostStorage;}
-  &[data-mod="images"] {grid-area: images;}
-  &[data-mod="volumes"] {grid-area: volumes;}
-  &[data-mod="containers"] {grid-area: containers;}
-  &[data-mod="hostDetails"] {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    .submod {
-      background-color: initial;
-      > * {
-        display: flex;
-        align-content: center;
-      }
-      &:last-of-type {
-        border: 0;
-      }
-      &:nth-child(1) {grid-area: one;}
-      &:nth-child(2) {grid-area: two;}
-      &:nth-child(3) {grid-area: three;}
-      &:nth-child(4) {grid-area: four;}
-      .key {
-        padding-right: @padding / 2;
-      }
-    }
-  }
-  &[data-mod="hostCpu"],&[data-mod="hostMemory"],&[data-mod="hostStorage"] {
+  // &[data-mod="hostDetails"] {grid-area: hostDetails;}
+  // &[data-mod="hostCpu"] {grid-area: hostCpu;}
+  // &[data-mod="hostMemory"] {grid-area: hostMemory;}
+  // &[data-mod="hostStorage"] {grid-area: hostStorage;}
+  // &[data-mod="images"] {grid-area: images;}
+  // &[data-mod="volumes"] {grid-area: volumes;}
+  // &[data-mod="containers"] {grid-area: containers;}
+
+  &[data-mod="hostStats"] {
+    margin-bottom: @padding / 2;
     section {
-      .submod {
-        justify-content: center;
-        &:nth-child(1) {
-          grid-area: one;
-          background-color: initial;
-          .value {
-            font-size: 64px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-gap: @padding / 2;
+      > div {
+        // background-color: lighten(@c1, 12%);
+        padding: @padding / 2;
+        .progress-bar-wrap {
+          background-color: lighten(@c1, 5%);
+          padding: 4px;
+          display: flex;
+          align-items: center;
+          border-radius: 10px;
+          // margin-bottom: @padding / 2;
+          .progress-bar {
+            height: 10px;
+            width: 0%;
+            border-radius: 10px;
+            transition: width 1s;
+            &.low {background-color: @cGreen2;}
+            &.mid {background-color: @cYellow;}
+            &.high {background-color: @cRed2;}
           }
         }
-        &:nth-child(2) {grid-area: two;}
-        &:nth-child(3) {grid-area: three;}
-        &:nth-child(4) {grid-area: four;}
-        &:nth-child(5) {grid-area: five;}
-        .key {
-          padding-bottom: @padding / 2;
+        .stat-detail {
+          margin-bottom: @padding / 2;
+          text-align: center;
+          font-weight: 700;
+          font-size: 13px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          cursor: default;
+          .key {margin-right: 4px;}
+          .value {color: white;}
         }
       }
     }
@@ -257,6 +269,7 @@ footer {
       }
     }
     section {
+      display: block;
       padding: 0;
       height: 350px;
       &.placeholder {
@@ -311,30 +324,30 @@ footer {
   }
   section {
     cursor: default;
-    display: grid;
-    grid-gap: @padding / 2;
-    align-content: space-between;
+    // display: grid;
+    // grid-gap: @padding / 2;
+    // align-content: space-between;
     background-color: lighten(@c1,10%);
     overflow: hidden;
-    .submod {
-      background-color: lighten(@c1,13%);
-      display: flex;
-      padding: @padding / 2;
-      align-items: center;
-      background-color: lighten(@c1,13%);
-      .flex-wrap {
-        text-align: center;
-      }
-      .key {
-        text-transform: uppercase;
-        font-weight: 500;
-        font-size: 12px;
-      }
-      .value {
-        color: white;
-        font-size: 12px;
-      }
-    }
+    // .submod {
+    //   background-color: lighten(@c1,13%);
+    //   display: flex;
+    //   padding: @padding / 2;
+    //   align-items: center;
+    //   background-color: lighten(@c1,13%);
+    //   .flex-wrap {
+    //     text-align: center;
+    //   }
+    //   .key {
+    //     text-transform: uppercase;
+    //     font-weight: 500;
+    //     font-size: 12px;
+    //   }
+    //   .value {
+    //     color: white;
+    //     font-size: 12px;
+    //   }
+    // }
   }
   footer {
     input {
@@ -359,116 +372,116 @@ footer {
 
 // Media Queries
 // Large View
-@media only screen and (min-width: 1700px) {
-  .dashboard {
-    .host {
-       grid-template-areas:
-         "header header header header"
-         // "hostDetails hostCpu hostMemory hostStorage"
-         // "images images volumes volumes"
-         "containers containers containers containers";
-      [data-mod="hostDetails"] {
-        section {
-          grid-template-areas:
-            "one two"
-            "three four"
-        }
-      }
-      [data-mod="hostCpu"],[data-mod="hostMemory"],[data-mod="hostStorage"] {
-        section {
-          grid-template-areas:
-            "one two three"
-            "one four five";
-        }
-      }
-    }
-  }
-}
+// @media only screen and (min-width: 1700px) {
+//   .dashboard {
+//     .host {
+//        grid-template-areas:
+//          "header header header header"
+//          // "hostDetails hostCpu hostMemory hostStorage"
+//          // "images images volumes volumes"
+//          "containers containers containers containers";
+//       [data-mod="hostDetails"] {
+//         section {
+//           grid-template-areas:
+//             "one two"
+//             "three four"
+//         }
+//       }
+//       [data-mod="hostCpu"],[data-mod="hostMemory"],[data-mod="hostStorage"] {
+//         section {
+//           grid-template-areas:
+//             "one two three"
+//             "one four five";
+//         }
+//       }
+//     }
+//   }
+// }
 // Normal View
-@media only screen and (max-width: 1699px) {
-  .dashboard {
-    .host {
-       grid-template-areas:
-        "header header header header"
-        // "hostDetails hostCpu hostMemory hostStorage"
-        // "images images volumes volumes"
-        "containers containers containers containers";
-      [data-mod="hostDetails"] {
-        section {
-          grid-template-areas:
-            "one"
-            "two"
-            "three"
-            "four"
-        }
-      }
-      [data-mod="hostCpu"],[data-mod="hostMemory"],[data-mod="hostStorage"] {
-        section {
-          grid-template-areas:
-            "one one"
-            "two three"
-            "four five";
-        }
-      }
-    }
-  }
-}
+// @media only screen and (max-width: 1699px) {
+//   .dashboard {
+//     .host {
+//        grid-template-areas:
+//         "header header header header"
+//         // "hostDetails hostCpu hostMemory hostStorage"
+//         // "images images volumes volumes"
+//         "containers containers containers containers";
+//       [data-mod="hostDetails"] {
+//         section {
+//           grid-template-areas:
+//             "one"
+//             "two"
+//             "three"
+//             "four"
+//         }
+//       }
+//       [data-mod="hostCpu"],[data-mod="hostMemory"],[data-mod="hostStorage"] {
+//         section {
+//           grid-template-areas:
+//             "one one"
+//             "two three"
+//             "four five";
+//         }
+//       }
+//     }
+//   }
+// }
 // Small View
-@media only screen and (max-width: 1000px) {
-  .dashboard {
-    .host {
-       grid-template-areas:
-        "header header header header"
-        // "hostDetails hostDetails hostCpu hostCpu"
-        // "hostMemory hostMemory hostStorage hostStorage"
-        // "images images images images"
-        // "volumes volumes volumes volumes"
-        "containers containers containers containers";
-    }
-  }
-}
+// @media only screen and (max-width: 1000px) {
+//   .dashboard {
+//     .host {
+//        grid-template-areas:
+//         "header header header header"
+//         // "hostDetails hostDetails hostCpu hostCpu"
+//         // "hostMemory hostMemory hostStorage hostStorage"
+//         // "images images images images"
+//         // "volumes volumes volumes volumes"
+//         "containers containers containers containers";
+//     }
+//   }
+// }
 // Extra Small View
-@media only screen and (max-width: 600px) {
-  body {
-    padding: @padding / 4;
-  }
-  .dashboard {
-   .host {
-      grid-template-areas:
-        "header header header header"
-        // "hostDetails hostDetails hostDetails hostDetails"
-        // "hostCpu hostCpu hostCpu hostCpu"
-        // "hostMemory hostMemory hostMemory hostMemory"
-        // "hostStorage hostStorage hostStorage hostStorage"
-        // "images images images images"
-        // "volumes volumes volumes volumes"
-        "containers containers containers containers";
-      .mod {
-        &[data-mod="containers"] {
-          header {
-            .header-controls {
-              [data-value="total"],[data-value="running"],[data-value="starting"],[data-value="healthy"] {display: none;}
-            }
-          }
-          section {
-            [data-table] {
-              grid-template-columns: 0fr 1fr 0fr 0fr 0fr 0fr 1fr 0fr !important;
-              grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-              [data-column="Id"],
-              [data-column="Image"],
-              [data-column="Created"],
-              [data-column="Command"],
-              [data-column="Ports"],
-              [data-column="Status"] {
-                padding: 0;
-              }
-            }
-          }
-        }
-     }
-    }
-  }
-}
+// @media only screen and (max-width: 600px) {
+//   body {
+//     padding: @padding / 4;
+//   }
+//   .dashboard {
+//    .host {
+//       grid-template-areas:
+//         "header header header header"
+//         // "hostDetails hostDetails hostDetails hostDetails"
+//         // "hostCpu hostCpu hostCpu hostCpu"
+//         // "hostMemory hostMemory hostMemory hostMemory"
+//         // "hostStorage hostStorage hostStorage hostStorage"
+//         // "images images images images"
+//         // "volumes volumes volumes volumes"
+//         "containers containers containers containers";
+//       .mod {
+//         &[data-mod="containers"] {
+//           header {
+//             .header-controls {
+//               [data-value="total"],[data-value="running"],[data-value="starting"],[data-value="healthy"] {display: none;}
+//             }
+//           }
+//           section {
+//             [data-table] {
+//               grid-template-columns: 0fr 1fr 0fr 0fr 0fr 0fr 1fr 0fr !important;
+//               grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+//               [data-column="Id"],
+//               [data-column="Image"],
+//               [data-column="Created"],
+//               [data-column="Command"],
+//               [data-column="Ports"],
+//               [data-column="Status"] {
+//                 padding: 0;
+//               }
+//             }
+//           }
+//         }
+//      }
+//     }
+//   }
+// }
 
 // Elements
 button {

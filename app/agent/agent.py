@@ -61,6 +61,75 @@ def myRequests(rcvPayload):
     def dkrDetails(resource):
         returnData = dkrClient.df()
         return returnData[resource]
+    def hostStatCpu():
+        try:
+            ## Get the load averages
+            fileObj = open('/proc/loadavg')
+            fileContents = fileObj.read().strip('\n').split()
+            fileObj.close()
+            avg1 = fileContents[0]
+            avg5 = fileContents[1]
+            avg15 = fileContents[2]
+
+            ## Work out the percentages
+            fileObj = open('/proc/stat')
+            fileContents = fileObj.read().split('\n')
+            fileObj.close()
+            cpuCount = 0
+            for line in fileContents:
+                if line:
+                    key = line.split()[0]
+                    value = line.split()[1:]
+                    if key.startswith('cpu'):
+                        cpuCount += 1
+            avg1Pct = (float(avg1) / cpuCount) * 100
+            avg5Pct = (float(avg5) / cpuCount) * 100
+            # returnData = {'avg1':float(avg1),'avg5':float(avg5),'avg15':float(avg15),'avg1Pct':int(avg1Pct),'avg5Pct':int(avg5Pct)}
+            return str(int(avg1Pct))
+        except:
+            return {'result':'error','message':'Unable to get cpu info'}
+    def hostStatRam():
+        try:
+            fileObj = open('/proc/meminfo')
+            fileContents = fileObj.read().split('\n')
+            fileObj.close()
+            dict = {}
+            for line in fileContents:
+                if line:
+                    key = line.split()[0].strip(':')
+                    value = line.split()[1]
+                    dict[key] = value
+            usage = int(dict['MemTotal']) - int(dict['MemAvailable'])
+            usagePct = (usage / int(dict['MemTotal'])) * 100
+            returnData = {
+                'memTotal':int( int(dict['MemTotal']) / 1024 ),
+                'memFree':int( int(dict['MemFree']) / 1024 ),
+                'memAvailable':int( int(dict['MemAvailable']) / 1024 ),
+                'memUsage':int( int(usage) / 1024 ),
+                'memUsagePct':int(usagePct),
+            }
+            return str(returnData['memUsagePct'])
+        except:
+            return {'result':'error','message':'Unable to get host memory info'}
+    def hostInfoStorage():
+        try:
+            info = dkrClient.info()
+            driver = info['Driver']
+            dockerRootDir = info['DockerRootDir']
+            statvfs = os.statvfs(dockerRootDir)
+            size = statvfs.f_frsize * statvfs.f_blocks # Size of filesystem in bytes
+            free = statvfs.f_frsize * statvfs.f_bfree # Actual number of free bytes
+            avail = statvfs.f_frsize * statvfs.f_bavail # Number of free bytes that ordinary users are allowed to use (excl. reserved space)
+            size = (size / 1024) / 1024 # In MB
+            free = (free / 1024) / 1024 # In GB
+            avail = (avail / 1024) / 1024 # In MB
+            usage = size - avail # Actual usage
+            usagePct = (usage / size) * 100 # Usage percentage
+            returnData = {'driver':driver,'size':int(size),'free':int(free),'avail':int(avail),'usage':int(usage),'usagePct':int(usagePct)}
+            return returnData['usagePct']
+        except:
+            return {'result':'error','message':"Error in hostInfoStorage"}
+
     ## Switch the requests
     request = rcvPayload['request']
     try:
@@ -86,6 +155,10 @@ def myRequests(rcvPayload):
             return rcvPayload
         if request == 'containerInspect':
             rcvPayload['details'] = dkrClient.containers.get(rcvPayload['container']).attrs
+            rcvPayload['result'] = 'success'
+            return rcvPayload
+        if request == 'hostStats':
+            rcvPayload['stats'] = {'cpu': hostStatCpu(),'ram':hostStatRam(),'disk':hostInfoStorage()}
             rcvPayload['result'] = 'success'
             return rcvPayload
     except:

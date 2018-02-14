@@ -235,18 +235,18 @@ def loadDashboard(dashboard):
 #     emit('serverAgentGetAll', returnData)
 
 ### New stuff
-def getData():
-    ''' Return the requested data '''
-    try:
-        configFile = 'config.json'
-        data = json.load(open(configFile,'r'))
-        return data
-    except:
-        log(('ERR','getData','Unable to open',configFile))
-        return False
 
 def getDashboard(dashboardName=False):
     ''' Return requested dashboard if specified, otherwise return all dashboards '''
+    def getData():
+        ''' Return the requested data '''
+        try:
+            configFile = 'config.json'
+            data = json.load(open(configFile,'r'))
+            return data
+        except:
+            log(('ERR','getData','Unable to open',configFile))
+            return False
     data = getData()
     if data:
         if dashboardName:

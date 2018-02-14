@@ -465,6 +465,31 @@ var mod = {
       this.load()
     },
   },
+  hostStats: {
+    load : function(thisHost){
+      // Make initial request
+      serverRequest({'request': 'hostStats', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
+    },
+    populate : function(thisHost,data){
+      if (data == undefined) {
+        this.load(thisHost);
+      } else {
+        if (thisHost && data) {
+          $.each(data,function(key,value){
+            var submod = thisHost.find('[data-stat="'+key+'"]');
+            var bar = submod.find('.progress-bar');
+            var detail = submod.find('.stat-detail .value');
+            bar.css('width',value+'%');
+            detail.text(value+'%')
+            if ( value <= 60 ) { bar.removeClass('mid high').addClass('low') }
+            if ( value > 60 && value <= 75 ) { bar.removeClass('low high').addClass('mid') }
+            if ( value > 75 ) { bar.removeClass('low mid').addClass('high') }
+          })
+        }
+      }
+
+    },
+  },
   containers : {
     load: function(thisHost) {
       // Load each containers module
@@ -663,176 +688,174 @@ var mod = {
         })
       }
     },
-    load2 : function() {
-      // Initialse all containers tables
-      $('[data-table="containers"]').each(function(){
-        // Initialse Table
-        $(this).tabulator({
-          // layout: "fitDataFill",
-          layout: "fitColumns",
-          height: '400px',
-          placeholder: "No containers",
-          initialSort:[{column:"Names", dir:"asc"}],
-          pagination: 'local',
-          tooltips: true,
-          paginationSize: 10,
-          columns: [
-            {title:"ID", field:"Id",headerFilter:true},
-            {title:"Image", field:"Image",headerFilter:true},
-            {title:"Command", field:"Command",headerFilter:true},
-            {title:"Created", field:"Created",headerFilter:true},
-            {title:"State", field:"State",headerFilter:true,
-              formatter:function(cell, formatterParams){
-                str = cell.getValue();
-                cellEl = cell.getElement()
-                if (str.indexOf('exited') >= 0) {cellEl.addClass('exited')}
-                if (str.indexOf('running') >= 0) {cellEl.addClass('healthy')}
-                return str
-              },
-            },
-            {title:"Status", field:"Status",headerFilter:true,
-              formatter:function(cell, formatterParams){
-                str = cell.getValue();
-                cellEl = cell.getElement()
-                if (str.indexOf('(unhealthy)') >= 0) {cellEl.addClass('unhealthy')}
-                if (str.indexOf('(healthy)') >= 0) {cellEl.addClass('healthy')}
-                if (str.indexOf('Exited') >= 0) {cellEl.addClass('exited')}
-                return str
-              },
-            },
-            {title:"Ports", field:"Ports",headerFilter:true,
-              mutator:function(value, data, type, mutatorParams, cell){
-                returnData = ""
-                if (value.length >= 1) {
-                  $.each(value,function(i,v){
-                    returnData += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
-                  })
-                  return returnData
-                } else {
-                  return 'NA'
-                }
-              },
-            },
-            {title:"Names", field:"Names",headerFilter:true},
-          ],
-          renderComplete:function(data){
-            // mod.containers.style();
-          },
-          rowClick:function(e, row) {
-            // selectedContainer = row.getData().shortId
-            // $(e.currentTarget).addClass('selected').siblings().removeClass('selected');
-          },
-        })
-      })
-    },
-    populate2 : function(hostId,data){
-      var host = $('[data-hostId="'+hostId+'"]');
-      var table = host.find('[data-table="containers"]');
-      // Populate table data if it is not paused
-      if (table.parents('.mod').attr('data-paused') == 'false') {
-        table.tabulator("setData",data);
-      }
-      // Update badges
-      countTotal = data.length;
-      countRunning = 0
-      countExited = 0
-      countHealthy = 0
-      countUnhealthy = 0
-      countStarting = 0
-      $.each(data,function(i,v){
-        if (v['State'].indexOf('running') >= 0) {countRunning += 1};
-        if (v['State'].indexOf('exited') >= 0) {countExited += 1};
-        if (v['State'].indexOf('starting') >= 0) {countStarting += 1};
-        if (v['Status'].indexOf('(healthy)') >= 0) {countHealthy += 1};
-        if (v['Status'].indexOf('(unhealthy)') >= 0) {countUnhealthy += 1};
-      })
-      table.parents('.mod').find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
-      table.parents('.mod').find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
-      table.parents('.mod').find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
-      table.parents('.mod').find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
-      table.parents('.mod').find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
-      table.parents('.mod').find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
-
-    },
-    style2 : function(table){
-      // Persist the container selected row
-      if (selectedContainer) {
-        table.find('.tabulator-cell:contains('+selectedContainer+')').parent().addClass('selected').siblings().removeClass('selected');
-      }
-    },
-    controls: function(){
-    },
-    controls2 : function(){
-      var thisMod = this.elements()['mod']
-      // Set active nav button
-      $('#nav [data-nav="containers"]').addClass('selected').siblings().removeClass('selected');
-      // Enable container control buttons
-      $('button[data-group="container"]').off().on('click',function(){
-        switch ( $(this).attr('data-fn') ) {
-          case 'stop':
-            console.log('Stopping container:',selectedContainer);
-            $.ajax({
-              url: '/container/stop/'+selectedContainer,
-              success: function(data) {
-                console.log(data);
-                mod.containers.refresh('force');
-                ui.notify(data.result,data.message);
-              }
-            })
-            break;
-          case 'start':
-            console.log('Starting container:',selectedContainer);
-            $.ajax({
-              url: '/container/start/'+selectedContainer,
-              success: function(data) {
-                console.log(data);
-                mod.containers.refresh('force');
-                ui.notify(data.result,data.message);
-              }
-            })
-            break;
-          case 'restart':
-           console.log('Restarting container:',selectedContainer);
-            $.ajax({
-              url: '/container/restart/'+selectedContainer,
-              success: function(data) {
-                console.log(data);
-                mod.containers.refresh('force');
-                ui.notify(data.result,data.message);
-              }
-            })
-            break;
-          case 'log':
-            modal.containerLog.load(selectedContainer)
-            break;
-          case 'top':
-            modal.containerTop.load(selectedContainer)
-            break;
-          case 'inspect':
-            modal.containerInspect.load(selectedContainer)
-            break;
-          case 'remove':
-            if ( $(this).children('.content').text() == 'Remove' ) {
-              // Confirm
-              $(this).children('.content').text('Confirm');
-              setTimeout(function(target){
-                target.children('.content').text('Remove');
-              }, 3000, $(this));
-            } else if ( $(this).children('.content').text() == 'Confirm' ) {
-              // Remove
-              $.ajax({
-                url: '/container/remove/'+selectedContainer,
-                success: function(data) {
-                  mod.containers.refresh('force');
-                  ui.notify(data.result,data.message);
-                }
-              })
-              $(this).children('.content').text('Remove');
-            }
-            break;
-          }
-      });
-    },
+    // load2 : function() {
+    //   // Initialse all containers tables
+    //   $('[data-table="containers"]').each(function(){
+    //     // Initialse Table
+    //     $(this).tabulator({
+    //       // layout: "fitDataFill",
+    //       layout: "fitColumns",
+    //       height: '400px',
+    //       placeholder: "No containers",
+    //       initialSort:[{column:"Names", dir:"asc"}],
+    //       pagination: 'local',
+    //       tooltips: true,
+    //       paginationSize: 10,
+    //       columns: [
+    //         {title:"ID", field:"Id",headerFilter:true},
+    //         {title:"Image", field:"Image",headerFilter:true},
+    //         {title:"Command", field:"Command",headerFilter:true},
+    //         {title:"Created", field:"Created",headerFilter:true},
+    //         {title:"State", field:"State",headerFilter:true,
+    //           formatter:function(cell, formatterParams){
+    //             str = cell.getValue();
+    //             cellEl = cell.getElement()
+    //             if (str.indexOf('exited') >= 0) {cellEl.addClass('exited')}
+    //             if (str.indexOf('running') >= 0) {cellEl.addClass('healthy')}
+    //             return str
+    //           },
+    //         },
+    //         {title:"Status", field:"Status",headerFilter:true,
+    //           formatter:function(cell, formatterParams){
+    //             str = cell.getValue();
+    //             cellEl = cell.getElement()
+    //             if (str.indexOf('(unhealthy)') >= 0) {cellEl.addClass('unhealthy')}
+    //             if (str.indexOf('(healthy)') >= 0) {cellEl.addClass('healthy')}
+    //             if (str.indexOf('Exited') >= 0) {cellEl.addClass('exited')}
+    //             return str
+    //           },
+    //         },
+    //         {title:"Ports", field:"Ports",headerFilter:true,
+    //           mutator:function(value, data, type, mutatorParams, cell){
+    //             returnData = ""
+    //             if (value.length >= 1) {
+    //               $.each(value,function(i,v){
+    //                 returnData += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
+    //               })
+    //               return returnData
+    //             } else {
+    //               return 'NA'
+    //             }
+    //           },
+    //         },
+    //         {title:"Names", field:"Names",headerFilter:true},
+    //       ],
+    //       renderComplete:function(data){
+    //         // mod.containers.style();
+    //       },
+    //       rowClick:function(e, row) {
+    //         // selectedContainer = row.getData().shortId
+    //         // $(e.currentTarget).addClass('selected').siblings().removeClass('selected');
+    //       },
+    //     })
+    //   })
+    // },
+    // populate2 : function(hostId,data){
+    //   var host = $('[data-hostId="'+hostId+'"]');
+    //   var table = host.find('[data-table="containers"]');
+    //   // Populate table data if it is not paused
+    //   if (table.parents('.mod').attr('data-paused') == 'false') {
+    //     table.tabulator("setData",data);
+    //   }
+    //   // Update badges
+    //   countTotal = data.length;
+    //   countRunning = 0
+    //   countExited = 0
+    //   countHealthy = 0
+    //   countUnhealthy = 0
+    //   countStarting = 0
+    //   $.each(data,function(i,v){
+    //     if (v['State'].indexOf('running') >= 0) {countRunning += 1};
+    //     if (v['State'].indexOf('exited') >= 0) {countExited += 1};
+    //     if (v['State'].indexOf('starting') >= 0) {countStarting += 1};
+    //     if (v['Status'].indexOf('(healthy)') >= 0) {countHealthy += 1};
+    //     if (v['Status'].indexOf('(unhealthy)') >= 0) {countUnhealthy += 1};
+    //   })
+    //   table.parents('.mod').find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
+    //   table.parents('.mod').find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
+    //   table.parents('.mod').find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
+    //   table.parents('.mod').find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
+    //   table.parents('.mod').find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
+    //   table.parents('.mod').find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
+    //
+    // },
+    // style2 : function(table){
+    //   // Persist the container selected row
+    //   if (selectedContainer) {
+    //     table.find('.tabulator-cell:contains('+selectedContainer+')').parent().addClass('selected').siblings().removeClass('selected');
+    //   }
+    // },
+    // controls2 : function(){
+    //   var thisMod = this.elements()['mod']
+    //   // Set active nav button
+    //   $('#nav [data-nav="containers"]').addClass('selected').siblings().removeClass('selected');
+    //   // Enable container control buttons
+    //   $('button[data-group="container"]').off().on('click',function(){
+    //     switch ( $(this).attr('data-fn') ) {
+    //       case 'stop':
+    //         console.log('Stopping container:',selectedContainer);
+    //         $.ajax({
+    //           url: '/container/stop/'+selectedContainer,
+    //           success: function(data) {
+    //             console.log(data);
+    //             mod.containers.refresh('force');
+    //             ui.notify(data.result,data.message);
+    //           }
+    //         })
+    //         break;
+    //       case 'start':
+    //         console.log('Starting container:',selectedContainer);
+    //         $.ajax({
+    //           url: '/container/start/'+selectedContainer,
+    //           success: function(data) {
+    //             console.log(data);
+    //             mod.containers.refresh('force');
+    //             ui.notify(data.result,data.message);
+    //           }
+    //         })
+    //         break;
+    //       case 'restart':
+    //        console.log('Restarting container:',selectedContainer);
+    //         $.ajax({
+    //           url: '/container/restart/'+selectedContainer,
+    //           success: function(data) {
+    //             console.log(data);
+    //             mod.containers.refresh('force');
+    //             ui.notify(data.result,data.message);
+    //           }
+    //         })
+    //         break;
+    //       case 'log':
+    //         modal.containerLog.load(selectedContainer)
+    //         break;
+    //       case 'top':
+    //         modal.containerTop.load(selectedContainer)
+    //         break;
+    //       case 'inspect':
+    //         modal.containerInspect.load(selectedContainer)
+    //         break;
+    //       case 'remove':
+    //         if ( $(this).children('.content').text() == 'Remove' ) {
+    //           // Confirm
+    //           $(this).children('.content').text('Confirm');
+    //           setTimeout(function(target){
+    //             target.children('.content').text('Remove');
+    //           }, 3000, $(this));
+    //         } else if ( $(this).children('.content').text() == 'Confirm' ) {
+    //           // Remove
+    //           $.ajax({
+    //             url: '/container/remove/'+selectedContainer,
+    //             success: function(data) {
+    //               mod.containers.refresh('force');
+    //               ui.notify(data.result,data.message);
+    //             }
+    //           })
+    //           $(this).children('.content').text('Remove');
+    //         }
+    //         break;
+    //       }
+    //   });
+    // },
   },
   containerTop : {
     element : function() {
@@ -1099,10 +1122,15 @@ var modal = {
       var thisModal = $('[data-modal="containerLog"]');
       var thisSection = thisModal.find('section');
       thisSection.empty();
-      thisSection.html('<pre></pre>');
-      $.each(log,function(i,v){
-        if (v) {thisSection.children('pre').append(i+' : '+v+'<br>')}
-      })
+      if ( log.length == 1 && log[0].length == 0 ) {
+        thisSection.html('<div class="placeholder">Nothing to see here</div>');
+      } else {
+        thisSection.html('<pre></pre>');
+        $.each(log,function(i,v){
+          if (v) {thisSection.children('pre').append(i+' : '+v+'<br>')}
+        })
+      }
+
       // Refresh
       $('[data-fn="refresh"]').off().click(function(){
         serverRequest({'request': 'containerLog', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisModal.attr('data-host'),'container': thisModal.attr('data-container')})
@@ -1129,6 +1157,7 @@ $(document).ready(function(){
   ui.defaults()
   dashboardControls.load()
   $('.host').each(function(){
+    mod.hostStats.load($(this));
     mod.containers.load($(this));
   })
 
@@ -1144,7 +1173,8 @@ window.setInterval(function(){
   // ui.refresh();
   // serverRequest('dkrDetails');
   $('.host').each(function(){
-    // mod.containers.populate($(this));
+    mod.containers.populate($(this));
+    mod.hostStats.populate($(this));
   })
 }, 10000);
 
@@ -1175,6 +1205,9 @@ socket.on('serverResponse', function(data) {
       break;
     case 'containerInspect':
       modal.containerInspect.load(data['details'])
+      break;
+    case 'hostStats':
+      mod.hostStats.populate(host,data['stats'])
       break;
   }
 
