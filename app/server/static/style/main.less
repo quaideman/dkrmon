@@ -646,7 +646,9 @@ button {
   background-color: darken(@c1, 2%);
   padding: @padding;
   margin: 0;
-  font-size: 14px;
+  font-size: 12px;
+  font-family: @f2;
+  white-space: pre;
   // overflow: auto;
   // display: grid;
   // .index {
@@ -659,15 +661,20 @@ button {
   //   color: lighten(@c1, 50%);
   //   grid-column: 2;
   // }
-  code {
-    &.json {
+  &.json {
       .key {color: #E06C75;}
       .boolean {color: #43B6C2;}
       .number {color: #C68D4F;}
       .string {color: #8DC379;}
     }
-  }
 }
+
+// Scrollbars
+::-webkit-scrollbar {width: 10px; height: 10px;}
+::-webkit-scrollbar-track {background: darken(@c1, 2%);}
+::-webkit-scrollbar-thumb {background: lighten(@c1,20%);}
+::-webkit-scrollbar-thumb:hover {background: lighten(@c1,35%);}
+::-webkit-scrollbar-corner {background: darken(@c1, 2%);}
 
 // Modal
 #modal-container {
@@ -692,14 +699,10 @@ button {
     &[data-modal="containerLog"],&[data-modal="containerInspect"] {
       width: 90%;
       section {
-        // height: 500px;
-        .log {
+        padding: 0;
+        .pre {
           height: 500px;
-          // white-space: nowrap;
-        }
-        pre {
-
-          // overflow: auto;
+          overflow: auto;
         }
       }
     }

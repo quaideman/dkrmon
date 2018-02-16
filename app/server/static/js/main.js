@@ -1155,35 +1155,50 @@ var modal = {
     load : function(log){
       var thisModal = $('[data-modal="containerLog"]');
       var thisSection = thisModal.find('section');
-      var logEl = thisSection.find('.log')
-      logEl.empty();
+      var preEl = thisSection.find('.pre')
+      preEl.empty();
       if ( log.length == 1 && log[0].length == 0 ) {
-        logEl.html('<div class="placeholder">Nothing to see here</div>');
+        preEl.html('<div class="placeholder">Nothing to see here</div>');
       } else {
         // thisSection.html('<pre></pre>');
         $.each(log,function(i,v){
-          if (v) {logEl.append('<div class="value">'+v+'</div>')}
+          if (v) {preEl.append('<div class="value">'+v+'</div>')}
         })
       }
-      // Add scrollbars
-      // new SimpleBar(logEl[0])
       // Refresh
-      $('[data-fn="refresh"]').off().click(function(){
+      thisModal.find('[data-fn="refresh"]').off().click(function(){
         serverRequest({'request': 'containerLog', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisModal.attr('data-host'),'container': thisModal.attr('data-container')})
       })
+      // scrollTop
+      thisModal.find('[data-fn="scrollTop"]').off().click(function(){
+        thisModal.find('section .pre').scrollTop(0);
+      });
+      // scrollBottom
+      thisModal.find('[data-fn="scrollBottom"]').off().click(function(){
+        thisModal.find('section .pre').scrollTop(thisModal.find('section .pre')[0].scrollHeight);
+      });
     },
   },
   containerInspect : {
     load : function(details){
       var thisModal = $('[data-modal="containerInspect"]');
       var thisSection = thisModal.find('section');
-      thisSection.empty();
+      var preEl = thisSection.find('.pre')
+      preEl.empty();
       var jsonData = ui.jsonPretty(JSON.stringify(details,null,2));
-      thisSection.html('<pre><code class="json">'+jsonData+'</code></pre>')
+      preEl.html(jsonData)
       // Refresh
       $('[data-fn="refresh"]').off().click(function(){
         serverRequest({'request': 'containerInspect', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisModal.attr('data-host'),'container': thisModal.attr('data-container')})
       })
+      // scrollTop
+      thisModal.find('[data-fn="scrollTop"]').off().click(function(){
+        thisModal.find('section .pre').scrollTop(0);
+      });
+      // scrollBottom
+      thisModal.find('[data-fn="scrollBottom"]').off().click(function(){
+        thisModal.find('section .pre').scrollTop(thisModal.find('section .pre')[0].scrollHeight);
+      });
     },
   },
 }
