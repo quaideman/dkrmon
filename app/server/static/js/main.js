@@ -23,7 +23,7 @@ var ui = {
       $(this).attr('data-active','false');
     })
     // Disable dashboard selector
-    $('.dashboard-selector').attr('data-active','false');
+    $('.dashboard-selector-wrap').attr('data-active','false');
   },
   viewMode: function(){
     var width = $(window).innerWidth();
@@ -84,7 +84,7 @@ var dashboardControls = {
     // Collapse all modues in dashboard
     $('button[data-fn="dashboardCollapse"]').click(function(){
       $('.host').each(function(){
-        $(this).find('.mod').attr('data-collapsed','true');
+        $(this).find('.mod[data-mod="containers"]').attr('data-collapsed','true');
         $(this).find('.mod [data-fn="toggleCollapse"] .icn').text('expand_more');
       })
     })
@@ -95,24 +95,52 @@ var dashboardControls = {
         $(this).find('.mod [data-fn="toggleCollapse"] .icn').text('expand_less');
       })
     })
-    // Manage agents
+    // Change Dashboard
     $('button[data-fn="dashboardSelect"]').click(function(){
-      var selector = $('.dashboard-selector')
+      var selector = $('.dashboard-selector-wrap')
       var status = selector.attr('data-active');
       if (status == 'false') {
         selector.attr('data-active','true');
       } else {
         selector.attr('data-active','false');
       }
-      selector.children('div').click(function(){
+      selector.find('.dashboard-list .item').click(function(){
         var dash = $(this).text();
         document.location.assign('/dashboard/'+dash);
-        // serverRequest({'request':'dashboardSelect','dashboard': dash})
       })
     })
-    // Save dashboard layout
-    $('button[data-fn="dashboardSaveLayout"]').click(function(){
-      ui.notify('success','Saved');
+    // Dashboard Filtering
+    var availableDashboards = $('.dashboard-list .item');
+    var filterDelay;
+    $('[data-fn="filterDashboards"]').keydown(function(){
+      var thisEl = $(this)
+      clearTimeout(filterDelay);
+      filterDelay = setTimeout(function(){
+        var query = thisEl.val();
+        if ( query.length > 0 ) {
+          // Get the items that match query
+          var items = []
+          availableDashboards.each(function(){
+            if ($(this).text().indexOf(query) >= 0) {
+              items.push($(this).text());
+            }
+          })
+          // Hide all items that are not in rows
+          if ( items.length > 0 ) {
+            availableDashboards.each(function(){
+              if ( $.inArray( $(this).text(), items) > -1 ) {
+                $(this).show()
+              } else {
+                $(this).hide()
+              }
+            })
+          }
+        } else {
+          availableDashboards.each(function(){
+            $(this).show();
+          })
+        }
+      }, 300);
     })
   },
   host: function(){
@@ -472,11 +500,14 @@ var mod = {
     },
     populate : function(thisHost,data){
       if (data == undefined) {
+        // Assume this is a load request
         this.load(thisHost);
       } else {
-        if (thisHost && data) {
-          $.each(data,function(key,value){
-            var submod = thisHost.find('[data-stat="'+key+'"]');
+        // Populate stats
+        var thisMod = thisHost.find('[data-mod="hostStats"]')
+        if (thisHost && data['result'] == 'success') {
+          $.each(data['stats'],function(key,value){
+            var submod = thisMod.find('[data-stat="'+key+'"]');
             var bar = submod.find('.progress-bar');
             var detail = submod.find('.stat-detail .value');
             bar.css('width',value+'%');
@@ -485,9 +516,12 @@ var mod = {
             if ( value > 60 && value <= 75 ) { bar.removeClass('low high').addClass('mid') }
             if ( value > 75 ) { bar.removeClass('low mid').addClass('high') }
           })
+        } else {
+          // Reset progress bars
+          thisMod.find('.progress-bar').css('width','0%');
+          thisMod.find('.stat-detail .value').text('0%');
         }
       }
-
     },
   },
   containers : {
@@ -1121,16 +1155,18 @@ var modal = {
     load : function(log){
       var thisModal = $('[data-modal="containerLog"]');
       var thisSection = thisModal.find('section');
-      thisSection.empty();
+      var logEl = thisSection.find('.log')
+      logEl.empty();
       if ( log.length == 1 && log[0].length == 0 ) {
-        thisSection.html('<div class="placeholder">Nothing to see here</div>');
+        logEl.html('<div class="placeholder">Nothing to see here</div>');
       } else {
-        thisSection.html('<pre></pre>');
+        // thisSection.html('<pre></pre>');
         $.each(log,function(i,v){
-          if (v) {thisSection.children('pre').append(i+' : '+v+'<br>')}
+          if (v) {logEl.append('<div class="value">'+v+'</div>')}
         })
       }
-
+      // Add scrollbars
+      // new SimpleBar(logEl[0])
       // Refresh
       $('[data-fn="refresh"]').off().click(function(){
         serverRequest({'request': 'containerLog', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisModal.attr('data-host'),'container': thisModal.attr('data-container')})
@@ -1181,13 +1217,13 @@ window.setInterval(function(){
 // Server Requests
 function serverRequest(request){
   console.log('serverRequest',request);
-  if ( request['request'] != 'containers') { ui.spinner() }
+  if ( request['request'] == 'containerStart' || request['request'] == 'containerStop' || request['request'] == 'containerRestart' ) { ui.spinner() }
   socket.emit('serverRequest', request);
 }
 
 // Server Responses
 socket.on('serverResponse', function(data) {
-  ui.spinner('destroy');
+  if ( data['request'] == 'containerStart' || data['request'] == 'containerStop' || data['request'] == 'containerRestart' ) { ui.spinner('destroy') }
   console.log("serverResponse",data);
   var host = $('[data-host="'+data['host']+'"]');
   switch (data['request']) {
@@ -1207,7 +1243,7 @@ socket.on('serverResponse', function(data) {
       modal.containerInspect.load(data['details'])
       break;
     case 'hostStats':
-      mod.hostStats.populate(host,data['stats'])
+      mod.hostStats.populate(host,data)
       break;
   }
 

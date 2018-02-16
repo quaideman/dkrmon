@@ -141,7 +141,7 @@ footer {
       font-size: 20px;
     }
   }
-  .dashboard-selector {
+  .dashboard-selector-wrap {
     position: absolute;
     height: 0;
     top:34px;
@@ -151,18 +151,48 @@ footer {
     z-index: 10;
     transition: all 0.2s;
     overflow: hidden;
+
     &[data-active="true"] {
       height: initial;
       // border: 2px solid @cYellow;
       border-top: 0;
     }
-    > div {
-      cursor: pointer;
-      padding: @padding / 2;
-      &:hover {
-        background-color: lighten(@c1, 5%);
+    .dashboard-filter {
+      margin: @padding / 2;
+      display: flex;
+      margin-bottom: @padding /2;
+      input {
+        border: 0;
+        width: 100%;
+        padding: @padding / 2;
+        background-color: lighten(@c1, 2%);
+        color: white;
+        outline: 0;
+        &::placeholder {color: white;}
+        &:hover, &:active {
+          background-color: lighten(@c1, 5%);
+        }
       }
     }
+    .dashboard-list {
+      margin: @padding / 2;
+      background-color: lighten(@c1,0%);
+      padding: 8px;
+      height: 200px;
+      overflow-y: auto;
+      > .item {
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 4px;
+        padding: @padding / 2;
+        transition: all 0.2s;
+        &:hover {
+          background-color: lighten(@c1, 5%);
+          color: white;
+        }
+      }
+    }
+
   }
 }
 .host {
@@ -612,8 +642,23 @@ button {
     letter-spacing: 1px;
   }
 }
-pre {
+.pre {
+  background-color: darken(@c1, 2%);
+  padding: @padding;
+  margin: 0;
   font-size: 14px;
+  // overflow: auto;
+  // display: grid;
+  // .index {
+  //   border-right: 1px solid @c1;
+  //   color: lighten(@c1,25%);
+  //   grid-column: 1;
+  //   text-align: right;
+  //   padding-right: @padding / 2;  }
+  // .value {
+  //   color: lighten(@c1, 50%);
+  //   grid-column: 2;
+  // }
   code {
     &.json {
       .key {color: #E06C75;}
@@ -647,8 +692,15 @@ pre {
     &[data-modal="containerLog"],&[data-modal="containerInspect"] {
       width: 90%;
       section {
-        height: 500px;
-        overflow: auto;
+        // height: 500px;
+        .log {
+          height: 500px;
+          // white-space: nowrap;
+        }
+        pre {
+
+          // overflow: auto;
+        }
       }
     }
     width: 600px;
@@ -729,9 +781,9 @@ pre {
 
 
 // Hide the tabulator loader. Doesn't seen to work using less nesting.
-.tabulator .tablulator-loader {
-  display: none !important;
-}
+// .tabulator .tablulator-loader {
+//   display: none !important;
+// }
 
 // Tables
 [data-table] {
