@@ -35,3 +35,55 @@
     </div>
   </footer>
 </div>
+
+<div class="modal" data-modal="volumes">
+  <header>
+    <div class="header-title">Volumes</div>
+    <div class="header-controls">
+      <button class="btn1 icn" data-fn="modalClose">clear</button>
+    </div>
+  </header>
+  <section>
+    <div data-table="volumes"></div>
+  </section>
+  <footer>
+    <div class="footer-controls">
+      <input data-fn="filterTable" name="filter" placeholder="Filter"></input>
+      <button class="btn1 cBlue" data-fn="previousPage" title="Previous Page"><span class="icn md-18">navigate_before</span></button>
+      <div class="badge str">
+        <span data-value="currentPage" title="Current Page"></span>
+      </div>
+      <button class="btn1 cBlue" data-fn="nextPage" title="Next Page"><span class="icn md-18">navigate_next</span></button>
+    </div>
+    <div class="footer-controls">
+      <button class="btn1 cBlue" data-fn="refresh" title="Refresh"><span class="icn md-18">refresh</span></button>
+      <button class="btn1 cBlue" data-fn="prune" title="Prune All Volumes"><span class="icn md-18">delete_sweep</span></button>
+    </div>
+  </footer>
+</div>
+
+<div class="modal" data-modal="images">
+  <header>
+    <div class="header-title">Images</div>
+    <div class="header-controls">
+      <button class="btn1 icn" data-fn="modalClose">clear</button>
+    </div>
+  </header>
+  <section>
+    <div data-table="images"></div>
+  </section>
+  <footer>
+    <div class="footer-controls">
+      <input data-fn="filterTable" name="filter" placeholder="Filter"></input>
+      <button class="btn1 cBlue" data-fn="previousPage" title="Previous Page"><span class="icn md-18">navigate_before</span></button>
+      <div class="badge str">
+        <span data-value="currentPage" title="Current Page"></span>
+      </div>
+      <button class="btn1 cBlue" data-fn="nextPage" title="Next Page"><span class="icn md-18">navigate_next</span></button>
+    </div>
+    <div class="footer-controls">
+      <button class="btn1 cBlue" data-fn="refresh" title="Refresh"><span class="icn md-18">refresh</span></button>
+      <button class="btn1 cBlue" data-fn="prune" title="Prune All Images"><span class="icn md-18">delete_sweep</span></button>
+    </div>
+  </footer>
+</div>

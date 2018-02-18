@@ -161,6 +161,14 @@ def myRequests(rcvPayload):
             rcvPayload['stats'] = {'cpu': hostStatCpu(),'ram':hostStatRam(),'disk':hostInfoStorage()}
             rcvPayload['result'] = 'success'
             return rcvPayload
+        if request == 'volumes':
+            rcvPayload['volumes'] = dkrDetails('Volumes')
+            rcvPayload['result'] = 'success'
+            return rcvPayload
+        if request == 'images':
+            rcvPayload['images'] = dkrDetails('Images')
+            rcvPayload['result'] = 'success'
+            return rcvPayload
     except:
         rcvPayload['result'] = 'error'
         return rcvPayload

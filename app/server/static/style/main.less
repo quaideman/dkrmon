@@ -120,6 +120,22 @@ footer {
       &:first-child {margin-left: 0;}
       &:last-child {margin-right: 0;}
     }
+    input {
+      border: 0;
+      border-radius: 3px;
+      background-color: lighten(@c1,25%);
+      padding: 0 @padding / 2;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      outline: 0;
+      &:hover {
+        background-color: lighten(@c1,30%);
+      }
+      &::placeholder {
+        color: lighten(@c1,60%);
+      }
+    }
   }
 }
 .dashboard {
@@ -240,14 +256,6 @@ footer {
   &[data-collapsed="true"] {
     section, footer {height: 0 !important; padding: 0;}
   }
-  // &[data-mod="hostDetails"] {grid-area: hostDetails;}
-  // &[data-mod="hostCpu"] {grid-area: hostCpu;}
-  // &[data-mod="hostMemory"] {grid-area: hostMemory;}
-  // &[data-mod="hostStorage"] {grid-area: hostStorage;}
-  // &[data-mod="images"] {grid-area: images;}
-  // &[data-mod="volumes"] {grid-area: volumes;}
-  // &[data-mod="containers"] {grid-area: containers;}
-
   &[data-mod="hostStats"] {
     margin-bottom: @padding / 2;
     section {
@@ -329,16 +337,6 @@ footer {
       }
     }
   }
-  &[data-mod="volumes"] {
-    section {
-      padding: 0;
-    }
-  }
-  &[data-mod="images"] {
-    section {
-      padding: 0;
-    }
-  }
   > header {
     background-color: lighten(@c1,15%);
     color: lighten(@c1,40%);
@@ -380,22 +378,6 @@ footer {
     // }
   }
   footer {
-    input {
-      border: 0;
-      border-radius: 3px;
-      background-color: lighten(@c1,25%);
-      padding: 0 @padding / 2;
-      color: white;
-      cursor: pointer;
-      transition: background-color 0.2s;
-      outline: 0;
-      &:hover {
-        background-color: lighten(@c1,30%);
-      }
-      &::placeholder {
-        color: lighten(@c1,60%);
-      }
-    }
     background-color: lighten(@c1,15%);
   }
 }
@@ -694,6 +676,7 @@ button {
   }
   .modal {
     position: relative;
+    width: 600px;
     > * {padding: @padding / 2;}
     background-color: lighten(@c1,5%);
     &[data-modal="containerLog"],&[data-modal="containerInspect"] {
@@ -706,7 +689,9 @@ button {
         }
       }
     }
-    width: 600px;
+    &[data-modal="volumes"], &[data-modal="images"] {
+      width: 90%;
+    }
     &[data-active="false"] {
       display: none;
     }
@@ -717,7 +702,7 @@ button {
       background-color: lighten(@c1,10%);
     }
     section {
-      min-height: 300px;
+      min-height: 350px;
     }
   }
 }
@@ -782,12 +767,6 @@ button {
   }
 }
 
-
-// Hide the tabulator loader. Doesn't seen to work using less nesting.
-// .tabulator .tablulator-loader {
-//   display: none !important;
-// }
-
 // Tables
 [data-table] {
   display: grid;
@@ -821,97 +800,3 @@ button {
     }
   }
 }
-
-// Tabulator
-// .tabulator {
-//   font-family: @f2;
-//   font-size: 12px;
-//   background-color: lighten(@c1, 10%);
-//   border: 0;
-//   .tabulator-header {
-//     background-color: lighten(@c1, 20%);
-//     color: white;
-//     border: 0;
-//     .tabulator-header-filter {
-//       input {
-//         border: 0;
-//         background-color: lighten(@c1, 25%);
-//         color: white;
-//         font-weight: normal;
-//         font-size: 10px;
-//       }
-//     }
-//     .tabulator-col {
-//       background-color: lighten(@c1, 20%);
-//       border: 0;
-//       &.tabulator-sortable {
-//         &:hover {
-//           background-color: lighten(@c1, 15%);
-//         }
-//         .tabulator-col-content {
-//           padding: @padding / 2;
-//           .tabulator-col-title {
-//             font-family: @f1;
-//             font-weight: 400;
-//           }
-//           .tabulator-arrow {
-//             top: @padding;
-//             border-bottom-color: white !important;
-//             &:active {
-//               border-bottom-color: white !important;
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-//   .tabulator-tableHolder {
-//     .tabulator-placeholder {
-//       // position: inherit;
-//     }
-//     .tabulator-table {
-//       .tabulator-row {
-//         background-color: lighten(@c1, 10%);
-//         color: white;
-//         &.tabulator-row-even {
-//           background-color: lighten(@c1, 7%);
-//         }
-//         &.tabulator-selectable {
-//           //transition: all 0.3s;
-//           &:hover {
-//             background-color: lighten(@c1,25%);
-//           }
-//         }
-//         &.selected {
-//           color: white;
-//           background-color: darken(@c1,5%);
-//         }
-//         .tabulator-cell {
-//           border: 0;
-//           padding: 8px;
-//
-//         }
-//       }
-//     }
-//   }
-//   .tabulator-footer {
-//     background-color: lighten(@c1, 20%);
-//     border: 0;
-//     padding: 5px;
-//     .tabulator-paginator {
-//
-//       .tabulator-page {
-//         color: white;
-//         border: 0;
-//         &.active {
-//           color: red;
-//         }
-//       }
-//       .tabulator-pages {
-//         display: inline-block !important;
-//       }
-//     }
-//
-//   }
-//
-// }

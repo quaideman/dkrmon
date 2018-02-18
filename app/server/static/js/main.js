@@ -144,33 +144,44 @@ var dashboardControls = {
     })
   },
   host: function(){
+
     // Collapse host
-    $('.host button[data-fn="collapseHost"]').click(function(){
-      $(this).parents('.host').find('.mod').each(function(){
-        $(this).attr('data-collapsed','true');
-        $(this).find('[data-fn="toggleCollapse"] .icn').text('expand_more');
-      })
-    })
+    // $('.host button[data-fn="collapseHost"]').click(function(){
+    //   $(this).parents('.host').find('.mod').each(function(){
+    //     $(this).attr('data-collapsed','true');
+    //     $(this).find('[data-fn="toggleCollapse"] .icn').text('expand_more');
+    //   })
+    // })
     // Expand host
-    $('.host button[data-fn="expandHost"]').click(function(){
-      $(this).parents('.host').find('.mod').each(function(){
-        $(this).attr('data-collapsed','false');
-        $(this).find('[data-fn="toggleCollapse"] .icn').text('expand_less');
-      })
-    })
+    // $('.host button[data-fn="expandHost"]').click(function(){
+    //   $(this).parents('.host').find('.mod').each(function(){
+    //     $(this).attr('data-collapsed','false');
+    //     $(this).find('[data-fn="toggleCollapse"] .icn').text('expand_less');
+    //   })
+    // })
     // Pause host
-    $('.host button[data-fn="pauseHost"]').click(function(){
-      var mods = $(this).parents('.host').find('.mod');
-      mods.each(function(){
-        $(this).attr('data-paused','true');
-      })
-    })
+    // $('.host button[data-fn="pauseHost"]').click(function(){
+    //   var mods = $(this).parents('.host').find('.mod');
+    //   mods.each(function(){
+    //     $(this).attr('data-paused','true');
+    //   })
+    // })
     // Resume host
-    $('.host button[data-fn="resumeHost"]').click(function(){
-      var mods = $(this).parents('.host').find('.mod');
-      mods.each(function(){
-        $(this).attr('data-paused','false');
-      })
+    // $('.host button[data-fn="resumeHost"]').click(function(){
+    //   var mods = $(this).parents('.host').find('.mod');
+    //   mods.each(function(){
+    //     $(this).attr('data-paused','false');
+    //   })
+    // })
+    // Volumes
+    $('.host button[data-fn="volumes"]').click(function(){
+      var thisHost = $(this).parents('.host');
+      modal.volumes.load(thisHost)
+    })
+    // Images
+    $('.host button[data-fn="images"]').click(function(){
+      var thisHost = $(this).parents('.host');
+      modal.images.load(thisHost)
     })
   },
   mod: function(){
@@ -309,9 +320,6 @@ var dashboardControls = {
       $(this).parents('.mod').attr('data-paused','true');
     })
   },
-  changeDashboard: function(){
-
-  },
   // Actions
   load: function(){
     this.global();
@@ -321,12 +329,12 @@ var dashboardControls = {
   },
 }
 
-function buildTable(table,data,columns,pageLimit){
+function buildTable(container,data,columns,pageLimit){
   function cellFormat(key,data){
     //  Formats table data cells when they contain objects
     // console.log(key,data);
     // Is there valid obects
-    if (data.length > 0) {
+    if (data.length > 0 || Object.keys(data).length > 0) {
       switch (key) {
         case 'Ports':
           // Iterate over X number of ports
@@ -336,10 +344,19 @@ function buildTable(table,data,columns,pageLimit){
           })
           break;
         case 'Names':
+        case 'RepoTags':
           // Iterate over X number of names
           returnData = ""
           $.each(data,function(i,v){
             returnData += v
+          })
+          break;
+        case 'Labels':
+        case 'UsageData':
+          // Iterate over X number of names
+          returnData = ""
+          $.each(data,function(i,v){
+            returnData += i+":"+v+" "
           })
           break;
         default:
@@ -349,8 +366,9 @@ function buildTable(table,data,columns,pageLimit){
     } else {
       return "NA"
     }
-
   }
+  var table = container.find('[data-table]');
+  var currentPageBadge = container.find('[data-value="currentPage"]');
   table.empty();
   // Build headers
   var columnCount = 0;
@@ -372,7 +390,7 @@ function buildTable(table,data,columns,pageLimit){
       // Make sure the object is in the columns list
       if ($.inArray(i,columns) > -1) {
         // Check whether the objet is an array that needs more iteration
-        if ($.type(v) == "array") {
+        if ($.type(v) == "array" || $.type(v) == "object" ) {
           var value = cellFormat(i,v);
           var cell = '<div class="cell" data-page="'+pageCount+'" data-row="'+rowCount+'" data-column="'+i+'" title="'+value+'">'+value+'</div>'
         } else {
@@ -382,8 +400,9 @@ function buildTable(table,data,columns,pageLimit){
         table.append(cell)
       }
     })
+    // Increment page numbers
+    if (Number.isInteger(rowCount / pageLimit) ) {pageCount += 1}
     rowCount += 1;
-    if (rowCount == pageLimit+1) {pageCount += 1; rowCount=0}
   })
   // Add row hover
   table.find('.cell').hover(function(){
@@ -391,108 +410,138 @@ function buildTable(table,data,columns,pageLimit){
     var page = $(this).attr('data-page');
     $(this).toggleClass('hovered').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('hovered');
   })
+
+  // Pagination
+  container.find('[data-fn="nextPage"]').off().click(function(){
+    var currentPage = parseInt(table.attr('data-page'))
+    var currentFilterPage = parseInt(table.attr('data-filterPage'))
+    var nextPage = currentPage + 1;
+    var nextFilterPage = currentFilterPage + 1;
+    // If a filter is applied, go to next filterPage
+    if ( table.attr('data-filter') ) {
+      // Load next page if exists
+      if ( table.find('.cell[data-filterPage="'+nextFilterPage+'"]').length > 0 ) {
+        currentPageBadge.text(nextFilterPage)
+        table.attr('data-filterPage',nextFilterPage)
+        table.find('.cell[data-filterPage="'+currentFilterPage+'"]').hide();
+        table.find('.cell[data-filterPage="'+nextFilterPage+'"]').show();
+      }
+    } else {
+      // Otherwise, go to next page
+      if ( table.find('.cell[data-page="'+nextPage+'"]').length > 0 ) {
+        currentPageBadge.text(nextPage)
+        table.attr('data-page',nextPage)
+        table.find('.cell[data-page="'+currentPage+'"]').hide();
+        table.find('.cell[data-page="'+nextPage+'"]').show();
+      }
+    }
+
+  })
+  container.find('[data-fn="previousPage"]').off().click(function(){
+    var currentPage = parseInt(table.attr('data-page'))
+    var currentFilterPage = parseInt(table.attr('data-filterPage'))
+
+    if ( table.attr('data-filter') ) {
+      if (currentFilterPage > 1) {
+        var prevFilterPage = currentFilterPage - 1;
+        // If a filter is applied, go to previous filterPage
+        currentPageBadge.text(prevFilterPage)
+        table.attr('data-filterPage',prevFilterPage)
+        table.find('.cell[data-filterPage="'+currentFilterPage+'"]').hide();
+        table.find('.cell[data-filterPage="'+prevFilterPage+'"]').show();
+      }
+    } else {
+      if (currentPage > 1) {
+        // Otherwise, go to the previous page
+        var prevPage = currentPage - 1;
+        currentPageBadge.text(prevPage)
+        table.attr('data-page',prevPage)
+        table.find('.cell[data-page="'+currentPage+'"]').hide();
+        table.find('.cell[data-page="'+prevPage+'"]').show();
+      }
+    }
+  })
+
+  // If page not set, deafult to 1
+  var currentPage = table.attr('data-page')
+  if ( ! currentPage ) {
+    table.attr('data-page','1')
+    container.find('[data-value="currentPage"]').text(1);
+    table.find('.cell[data-page="1"]').show();
+  } else {
+    container.find('[data-value="currentPage"]').text(parseInt(currentPage));
+    table.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
+  }
+  // Apply any filters that may be applied
+  var tableFilter = table.attr('data-filter');
+  if ( tableFilter ) {
+    filterTable(tableFilter,container)
+  }
+}
+function filterTable(query,container){
+    var table = container.find('[data-table]');
+    currentPage = table.attr('data-page');
+    table.attr('data-filterPage',1)
+    // Apply Filtering
+    if ( query.length > 0 ) {
+      // Set the current filter
+      table.attr('data-filter',query);
+      // Clear exiting filterPage attributes
+      table.find('.cell').each(function(){
+        $(this).removeAttr('data-filterPage');
+      })
+      // Get the rows that match query
+      var rows = []
+      var page = 1
+      var count = 1
+      table.find('.cell').each(function(){
+        if ($(this).text().indexOf(query) >= 0) {
+          // Append row to rows
+          if ($.inArray($(this).attr('data-row'),rows) == -1 ) {
+            rows.push($(this).attr('data-row'));
+          }
+        }
+      })
+      // Paginate the filtered rows
+      var filterPage = 1
+      var filterCount = 0
+      if ( rows.length > 0 ) {
+        $.each(rows,function(i,v){
+          if ( filterCount == 10 ) {
+            filterPage += 1
+            filterCount = 0
+          }
+          filterCount += 1
+          table.find('.cell[data-row="'+v+'"]').each(function(){
+            $(this).attr('data-filterPage',filterPage)
+          })
+        })
+      }
+
+      // Hide rows that do not match filter
+      if ( rows.length > 0 ) {
+        table.find('.cell').each(function(){
+          if ( $.inArray( $(this).attr('data-row'), rows) > -1 && $(this).attr('data-filterPage') == 1 ) {
+            container.find('[data-value="currentPage"]').text(1)
+            $(this).show()
+          } else {
+            $(this).hide()
+          }
+        })
+      }
+    } else {
+      table.removeAttr('data-filter');
+      table.find('.cell').removeAttr('data-filterPage');
+      table.find('.cell[data-page]').hide();
+      table.find('.cell[data-page="'+currentPage+'"]').each(function(){
+        container.find('[data-value="currentPage"]').text(currentPage)
+        $(this).show();
+      })
+    }
 }
 
 // Modules
 var mod = {
-  hostDetails : {
-    element : function(){
-      return $('[data-mod="hostDetails"]')
-    },
-    load : function(){
-      var element = this.element();
-      $.ajax({
-        url: '/host/info/details',
-        success: function(data) {
-          element.find('[data-value="hostname"]').text(data.data.Name)
-          element.find('[data-value="operatingSystem"]').text(data.data.OperatingSystem)
-          element.find('[data-value="kernelVersion"]').text(data.data.KernelVersion)
-          element.find('[data-value="swarm"]').text(data.data.Swarm.ControlAvailable)
-          element.find('.mod-header .title').text(data.data.Name)
-        }
-      });
-    },
-    refresh : function(){
-      this.load()
-    },
-  },
-  hostCpu : {
-    element : function(){
-      return $('[data-mod="hostCpu"]')
-    },
-    load : function(){
-      var element = this.element();
-      $.ajax({
-        url: '/host/info/cpu',
-        success: function(data) {
-          // console.log(data);
-          if (data.data.avg5Pct >= 0 && data.data.avg5Pct <= 25) {var state = "low"}
-          if (data.data.avg5Pct >= 26 && data.data.avg5Pct <= 75) {var state = "mid"}
-          if (data.data.avg5Pct >= 76) {var state = "high"}
-          element.find('[data-value="pct"]').text(data.data.avg1Pct+"%").removeClass('low mid high').addClass(state)
-          element.find('[data-value="pctBar"]').css('width',data.data.avg1Pct+"%").removeClass('low mid high').addClass(state)
-          element.find('[data-value="avg1"]').text(data.data.avg1)
-          element.find('[data-value="avg5"]').text(data.data.avg5)
-          element.find('[data-value="avg15"]').text(data.data.avg15)
-        }
-      });
-    },
-    refresh : function(){
-      this.load()
-    },
-  },
-  hostMemory : {
-    element : function(){
-      return $('[data-mod="hostMemory"]')
-    },
-    load : function(){
-      var element = this.element();
-      $.ajax({
-        url: '/host/info/memory',
-        success: function(data) {
-          // console.log(data);
-          if (data.data.memUsagePct >= 0 && data.data.memUsagePct <= 50) {var state = "low"}
-          if (data.data.memUsagePct >= 51 && data.data.memUsagePct <= 80) {var state = "mid"}
-          if (data.data.memUsagePct >= 81) {var state = "high"}
-          element.find('[data-value="pct"]').text(data.data.memUsagePct+"%").removeClass('low mid high').addClass(state)
-          element.find('[data-value="pctBar"]').css('width',data.data.memUsagePct+"%").removeClass('low mid high').addClass(state)
-          element.find('[data-value="total"]').text(data.data.memTotal+" MB")
-          element.find('[data-value="available"]').text(data.data.memAvailable+" MB")
-          element.find('[data-value="free"]').text(data.data.memFree+" MB")
-          element.find('[data-value="usage"]').text(data.data.memUsage+" MB")
-        }
-      });
-    },
-    refresh : function(){
-      this.load()
-    },
-  },
-  hostStorage : {
-    element : function(){
-      return $('[data-mod="hostStorage"]')
-    },
-    load : function(){
-      var element = this.element();
-      $.ajax({
-        url: '/host/info/storage',
-        success: function(data) {
-          // console.log(data);
-          if (data.data.usagePct >= 0 && data.data.usagePct <= 50) {var state = "low"}
-          if (data.data.usagePct >= 51 && data.data.usagePct <= 80) {var state = "mid"}
-          if (data.data.usagePct >= 81) {var state = "high"}
-          element.find('[data-value="pct"]').text(data.data.usagePct+'%').removeClass('low mid high').addClass(state)
-          element.find('[data-value="pctBar"]').css('width',data.data.usagePct+"%").removeClass('low mid high').addClass(state)
-          element.find('[data-value="driver"]').text(data.data.driver)
-          element.find('[data-value="size"]').text(data.data.size+" MB")
-          element.find('[data-value="usage"]').text(data.data.usage+" MB")
-          element.find('[data-value="avail"]').text(data.data.avail+" MB")
-        }
-      });
-    },
-    refresh : function(){
-      this.load()
-    },
-  },
   hostStats: {
     load : function(thisHost){
       // Make initial request
@@ -532,27 +581,6 @@ var mod = {
       var thisTable = thisMod.find('[data-table]');
       var currentPageBadge = thisMod.find('[data-value="currentPage"]');
       function loadControls(){
-        // Pagination
-        thisMod.find('[data-fn="nextPage"]').click(function(){
-          var currentPage = parseInt(currentPageBadge.text());
-          var nextPage = currentPage + 1;
-          // Load next page if exists
-          if ( thisTable.find('.cell[data-page="'+nextPage+'"]').length > 0 ) {
-            currentPageBadge.text(nextPage)
-            thisTable.find('.cell[data-page="'+currentPage+'"]').hide();
-            thisTable.find('.cell[data-page="'+nextPage+'"]').show();
-          }
-        })
-        thisMod.find('[data-fn="previousPage"]').click(function(){
-          var currentPage = parseInt(currentPageBadge.text());
-          // Load previous page if it exists
-          if (currentPage > 1) {
-            var prevPage = currentPage - 1;
-            currentPageBadge.text(prevPage)
-            thisTable.find('.cell[data-page="'+currentPage+'"]').hide();
-            thisTable.find('.cell[data-page="'+prevPage+'"]').show();
-          }
-        })
         // Filter handler
         var filterDelay;
         thisMod.find('[data-fn="filterTable"]').keydown(function(){
@@ -560,7 +588,7 @@ var mod = {
           clearTimeout(filterDelay);
           filterDelay = setTimeout(function(){
             var query = thisEl.val();
-            mod.containers.filter(query,thisTable);
+            filterTable(query,thisMod);
           }, 300);
         })
         // Attach events to control buttons
@@ -598,8 +626,6 @@ var mod = {
         serverRequest({'request': 'containers', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
       }
       loadControls()
-      // Make request for data
-
     },
     populate: function(thisHost,data){
       var thisDashboard = $('.dashboard').attr('data-dashboard');
@@ -619,11 +645,11 @@ var mod = {
             hostStatusBadge.removeClass('cRed').addClass('cGreen').attr('title','Agent Healthy');
             hostStatusBadge.children('span').text('done');
             thisSection.removeClass('placeholder');
-            var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status'];
             // Disable container buttons
             thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
             // Populate table with data
-            buildTable(thisTable,data['data'],columns,10)
+            var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status'];
+            buildTable(thisMod,data['data'],columns,10)
             // Get counts
             countTotal = data['data'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
             $.each(data['data'],function(i,v){
@@ -650,20 +676,9 @@ var mod = {
               if ($(this).text().indexOf('unhealthy') >= 0) {$(this).addClass('unhealthy')}
               if ($(this).text().indexOf('Exited') >= 0) {$(this).addClass('exited')}
             })
-            // If page not set, deafult to 1
-            var currentPage = thisMod.find('[data-value="currentPage"]').text();
-            if ( ! currentPage ) {
-              thisMod.find('[data-value="currentPage"]').text(1);
-              thisTable.find('.cell[data-page="1"]').show();
-            } else {
-              thisMod.find('[data-value="currentPage"]').text(parseInt(currentPage));
-              thisTable.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
-            }
             // Apply any filters that may be applied
             var tableFilter = thisTable.attr('data-filter');
-            if ( tableFilter ) {
-              mod.containers.filter(tableFilter,thisTable)
-            }
+            if ( tableFilter ) { tableFilter(tableFilter,thisTable) }
             // Row select
             thisTable.find('.cell').click(function(){
               var row = $(this).attr('data-row');
@@ -692,452 +707,6 @@ var mod = {
         }
       }
     },
-    filter: function(query,table){
-      // Apply Filtering
-      // console.log(query,query.length);
-      if ( query.length > 0 ) {
-        // Set the current filter so populate can check
-        table.attr('data-filter',query);
-        // Get the rows that match query
-        var rows = []
-        table.find('.cell').each(function(){
-          if ($(this).text().indexOf(query) >= 0) {
-            rows.push($(this).attr('data-row'));
-          }
-        })
-        // Hide all rows that are not in rows
-        if ( rows.length > 0 ) {
-          table.find('.cell').each(function(){
-            if ( $.inArray( $(this).attr('data-row'), rows) > -1 ) {
-              $(this).show()
-            } else {
-              $(this).hide()
-            }
-          })
-        }
-      } else {
-        table.removeAttr('data-filter');
-        table.find('.cell').each(function(){
-          $(this).show();
-        })
-      }
-    },
-    // load2 : function() {
-    //   // Initialse all containers tables
-    //   $('[data-table="containers"]').each(function(){
-    //     // Initialse Table
-    //     $(this).tabulator({
-    //       // layout: "fitDataFill",
-    //       layout: "fitColumns",
-    //       height: '400px',
-    //       placeholder: "No containers",
-    //       initialSort:[{column:"Names", dir:"asc"}],
-    //       pagination: 'local',
-    //       tooltips: true,
-    //       paginationSize: 10,
-    //       columns: [
-    //         {title:"ID", field:"Id",headerFilter:true},
-    //         {title:"Image", field:"Image",headerFilter:true},
-    //         {title:"Command", field:"Command",headerFilter:true},
-    //         {title:"Created", field:"Created",headerFilter:true},
-    //         {title:"State", field:"State",headerFilter:true,
-    //           formatter:function(cell, formatterParams){
-    //             str = cell.getValue();
-    //             cellEl = cell.getElement()
-    //             if (str.indexOf('exited') >= 0) {cellEl.addClass('exited')}
-    //             if (str.indexOf('running') >= 0) {cellEl.addClass('healthy')}
-    //             return str
-    //           },
-    //         },
-    //         {title:"Status", field:"Status",headerFilter:true,
-    //           formatter:function(cell, formatterParams){
-    //             str = cell.getValue();
-    //             cellEl = cell.getElement()
-    //             if (str.indexOf('(unhealthy)') >= 0) {cellEl.addClass('unhealthy')}
-    //             if (str.indexOf('(healthy)') >= 0) {cellEl.addClass('healthy')}
-    //             if (str.indexOf('Exited') >= 0) {cellEl.addClass('exited')}
-    //             return str
-    //           },
-    //         },
-    //         {title:"Ports", field:"Ports",headerFilter:true,
-    //           mutator:function(value, data, type, mutatorParams, cell){
-    //             returnData = ""
-    //             if (value.length >= 1) {
-    //               $.each(value,function(i,v){
-    //                 returnData += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
-    //               })
-    //               return returnData
-    //             } else {
-    //               return 'NA'
-    //             }
-    //           },
-    //         },
-    //         {title:"Names", field:"Names",headerFilter:true},
-    //       ],
-    //       renderComplete:function(data){
-    //         // mod.containers.style();
-    //       },
-    //       rowClick:function(e, row) {
-    //         // selectedContainer = row.getData().shortId
-    //         // $(e.currentTarget).addClass('selected').siblings().removeClass('selected');
-    //       },
-    //     })
-    //   })
-    // },
-    // populate2 : function(hostId,data){
-    //   var host = $('[data-hostId="'+hostId+'"]');
-    //   var table = host.find('[data-table="containers"]');
-    //   // Populate table data if it is not paused
-    //   if (table.parents('.mod').attr('data-paused') == 'false') {
-    //     table.tabulator("setData",data);
-    //   }
-    //   // Update badges
-    //   countTotal = data.length;
-    //   countRunning = 0
-    //   countExited = 0
-    //   countHealthy = 0
-    //   countUnhealthy = 0
-    //   countStarting = 0
-    //   $.each(data,function(i,v){
-    //     if (v['State'].indexOf('running') >= 0) {countRunning += 1};
-    //     if (v['State'].indexOf('exited') >= 0) {countExited += 1};
-    //     if (v['State'].indexOf('starting') >= 0) {countStarting += 1};
-    //     if (v['Status'].indexOf('(healthy)') >= 0) {countHealthy += 1};
-    //     if (v['Status'].indexOf('(unhealthy)') >= 0) {countUnhealthy += 1};
-    //   })
-    //   table.parents('.mod').find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
-    //   table.parents('.mod').find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
-    //   table.parents('.mod').find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
-    //   table.parents('.mod').find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
-    //   table.parents('.mod').find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
-    //   table.parents('.mod').find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
-    //
-    // },
-    // style2 : function(table){
-    //   // Persist the container selected row
-    //   if (selectedContainer) {
-    //     table.find('.tabulator-cell:contains('+selectedContainer+')').parent().addClass('selected').siblings().removeClass('selected');
-    //   }
-    // },
-    // controls2 : function(){
-    //   var thisMod = this.elements()['mod']
-    //   // Set active nav button
-    //   $('#nav [data-nav="containers"]').addClass('selected').siblings().removeClass('selected');
-    //   // Enable container control buttons
-    //   $('button[data-group="container"]').off().on('click',function(){
-    //     switch ( $(this).attr('data-fn') ) {
-    //       case 'stop':
-    //         console.log('Stopping container:',selectedContainer);
-    //         $.ajax({
-    //           url: '/container/stop/'+selectedContainer,
-    //           success: function(data) {
-    //             console.log(data);
-    //             mod.containers.refresh('force');
-    //             ui.notify(data.result,data.message);
-    //           }
-    //         })
-    //         break;
-    //       case 'start':
-    //         console.log('Starting container:',selectedContainer);
-    //         $.ajax({
-    //           url: '/container/start/'+selectedContainer,
-    //           success: function(data) {
-    //             console.log(data);
-    //             mod.containers.refresh('force');
-    //             ui.notify(data.result,data.message);
-    //           }
-    //         })
-    //         break;
-    //       case 'restart':
-    //        console.log('Restarting container:',selectedContainer);
-    //         $.ajax({
-    //           url: '/container/restart/'+selectedContainer,
-    //           success: function(data) {
-    //             console.log(data);
-    //             mod.containers.refresh('force');
-    //             ui.notify(data.result,data.message);
-    //           }
-    //         })
-    //         break;
-    //       case 'log':
-    //         modal.containerLog.load(selectedContainer)
-    //         break;
-    //       case 'top':
-    //         modal.containerTop.load(selectedContainer)
-    //         break;
-    //       case 'inspect':
-    //         modal.containerInspect.load(selectedContainer)
-    //         break;
-    //       case 'remove':
-    //         if ( $(this).children('.content').text() == 'Remove' ) {
-    //           // Confirm
-    //           $(this).children('.content').text('Confirm');
-    //           setTimeout(function(target){
-    //             target.children('.content').text('Remove');
-    //           }, 3000, $(this));
-    //         } else if ( $(this).children('.content').text() == 'Confirm' ) {
-    //           // Remove
-    //           $.ajax({
-    //             url: '/container/remove/'+selectedContainer,
-    //             success: function(data) {
-    //               mod.containers.refresh('force');
-    //               ui.notify(data.result,data.message);
-    //             }
-    //           })
-    //           $(this).children('.content').text('Remove');
-    //         }
-    //         break;
-    //       }
-    //   });
-    // },
-  },
-  containerTop : {
-    element : function() {
-      return $("#table-container-top");
-    },
-    load : function() {
-      this.element().tabulator({
-        height: 300,
-        layout: "fitDataFill",
-        selectable: false,
-        columns: [
-          {title:"UID", field:"uid"},
-          {title:"PID", field:"pid"},
-          {title:"PPID", field:"ppid"},
-          {title:"C", field:"c"},
-          {title:"STIME", field:"stime"},
-          {title:"TTY", field:"tty"},
-          {title:"TIME", field:"time"},
-          {title:"CMD", field:"cmd"},
-        ],
-      });
-    },
-    style : function() {},
-    refresh : function(data) {
-      this.element().tabulator("setData",data);
-    },
-    resize : function() {},
-  },
-  images : {
-    load : function() {
-      // Initialse all containers tables
-      $('[data-table="images"]').each(function(){
-        // Initialse Table
-        $(this).tabulator({
-          // layout: "fitDataFill",
-          layout: "fitColumns",
-          height: '400px',
-          placeholder: "No Images",
-          initialSort:[{column:"Labels", dir:"asc"}],
-          pagination: 'local',
-          tooltips: true,
-          paginationSize: 10,
-          columns: [
-            {title:"Containers", field:"Containers",headerFilter:true},
-            {title:"Created", field:"Created",headerFilter:true},
-            {title:"ID", field:"Id",headerFilter:true},
-            {title:"Labels", field:"Labels",headerFilter:true,
-              mutator:function(value){
-                returnData = ""
-                if (value) {
-                  $.each(value,function(i,v){
-                    returnData += i+':'+v
-                  })
-                  return returnData
-                } else {
-                  return 'NA'
-                }
-              },
-            },
-            {title:"Tags", field:"RepoTags",headerFilter:true},
-            {title:"Size", field:"Size",headerFilter:true},
-          ],
-          // data: data['Containers'],
-          renderComplete:function(data){
-            // mod.containers.style();
-          },
-          rowClick:function(e, row) {
-            // selectedContainer = row.getData().shortId
-            // $(e.currentTarget).addClass('selected').siblings().removeClass('selected');
-          },
-        })
-      })
-    },
-    populate : function(hostId,data){
-      var host = $('[data-hostId="'+hostId+'"]');
-      var table = host.find('[data-table="images"]');
-      // Populate table data if it is not paused
-      if (table.parents('.mod').attr('data-paused') == 'false') {
-        table.tabulator("setData",data);
-      }
-      // Update badges
-      countTotal = data.length;
-      table.parents('.mod').find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
-    },
-    style : function(){
-      var thisTable = this.elements()['table'];
-      // Persist the container selected row
-      if (selectedImage) {
-        thisTable.find('.tabulator-cell:contains('+selectedImage+')').parent().addClass('selected').siblings().removeClass('selected');
-      }
-    },
-    controls : function(){
-      // Set active nav button
-      $('#nav [data-nav="images"]').addClass('selected').siblings().removeClass('selected');
-      // Control buttons
-      $('button[data-group="image"]').off().on('click',function(){
-        switch ( $(this).attr('data-fn') ) {
-          case 'prune':
-            console.log('Pruning images');
-            $.ajax({
-              url: '/images/prune',
-              success: function(data) {
-                console.log(data);
-                mod.images.refresh();
-                ui.notify(data.result,data.message);
-              }
-            })
-            break;
-          case 'inspect':
-            modal.imageInspect.load(selectedImage)
-            break;
-          case 'remove':
-            if ( $(this).children('.content').text() == 'Remove' ) {
-              // Confirm
-              $(this).children('.content').text('Confirm');
-              setTimeout(function(target){
-                target.children('.content').text('Remove');
-              }, 3000, $(this));
-            } else if ( $(this).children('.content').text() == 'Confirm' ) {
-              // Remove
-              $.ajax({
-                url: '/image/remove/'+selectedImage,
-                success: function(data) {
-                  mod.images.refresh('force');
-                  ui.notify(data.result,data.message);
-                }
-              })
-              $(this).children('.content').text('Remove');
-            }
-            break;
-          }
-      });
-    },
-  },
-  volumes : {
-    load : function() {
-      // Initialse all containers tables
-      $('[data-table="volumes"]').each(function(){
-        // Initialse Table
-        $(this).tabulator({
-          // layout: "fitDataFill",
-          layout: "fitColumns",
-          height: '400px',
-          placeholder: "No Volumes",
-          initialSort:[{column:"Name", dir:"asc"}],
-          pagination: 'local',
-          tooltips: true,
-          paginationSize: 10,
-          columns: [
-            {title:"Created", field:"CreatedAt",headerFilter:true},
-            {title:"Driver", field:"Driver",headerFilter:true},
-            {title:"Labels", field:"Labels",headerFilter:true,
-              mutator:function(value){
-                returnData = ""
-                if (value.length >= 1) {
-                  $.each(value,function(i,v){
-                    // returnData += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
-                  })
-                  return returnData
-                } else {
-                  return 'NA'
-                }
-              },
-            },
-            {title:"Mountpoint", field:"Mountpoint",headerFilter:true,
-              mutator:function(value){
-                returnData = ""
-                if (value) {
-                  returnData = value;
-                  return returnData
-                } else {
-                  return 'NA'
-                }
-              },
-            },
-            {title:"Name", field:"Name",headerFilter:true},
-          ],
-          // data: data['Containers'],
-          renderComplete:function(data){
-            // mod.containers.style();
-          },
-          rowClick:function(e, row) {
-            // selectedContainer = row.getData().shortId
-            // $(e.currentTarget).addClass('selected').siblings().removeClass('selected');
-          },
-        })
-      })
-    },
-    populate : function(hostId,data){
-      var host = $('[data-hostId="'+hostId+'"]');
-      var table = host.find('[data-table="volumes"]');
-      // Populate table data if it is not paused
-      if (table.parents('.mod').attr('data-paused') == 'false') {
-        table.tabulator("setData",data);
-      }
-      // Update badges
-      countTotal = data.length;
-      table.parents('.mod').find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
-    },
-    style : function(){
-      var thisTable = this.elements()['table'];
-      // Persist the container selected row
-      if (selectedVolume) {
-        thisTable.find('.tabulator-cell:contains('+selectedVolume+')').parent().addClass('selected').siblings().removeClass('selected');
-      }
-    },
-    controls : function(){
-      // Set active nav button
-      $('#nav [data-nav="volumes"]').addClass('selected').siblings().removeClass('selected');
-      // Control buttons
-      $('button[data-group="volume"]').off().on('click',function(){
-        switch ( $(this).attr('data-fn') ) {
-          case 'prune':
-            console.log('Pruning Volumes');
-            $.ajax({
-              url: '/volumes/prune',
-              success: function(data) {
-                console.log(data);
-                mod.volumes.refresh();
-                ui.notify(data.result,data.message);
-              }
-            })
-            break;
-          case 'inspect':
-            modal.volumeInspect.load(selectedVolume)
-            break;
-          case 'remove':
-            if ( $(this).children('.content').text() == 'Remove' ) {
-              // Confirm
-              $(this).children('.content').text('Confirm');
-              setTimeout(function(target){
-                target.children('.content').text('Remove');
-              }, 3000, $(this));
-            } else if ( $(this).children('.content').text() == 'Confirm' ) {
-              // Remove
-              $.ajax({
-                url: '/volume/remove/'+selectedVolume,
-                success: function(data) {
-                  mod.volumes.refresh('force');
-                  ui.notify(data.result,data.message);
-                }
-              })
-              $(this).children('.content').text('Remove');
-            }
-            break;
-          }
-      });
-    },
   },
 }
 
@@ -1150,6 +719,8 @@ var modal = {
   close: function(trigger){
     $('#modal-container').attr('data-active','false');
     trigger.parents('.modal').attr('data-active','false');
+    // Empty any Tables
+    trigger.parents('.modal').find('[data-table]').empty()
   },
   containerLog : {
     load : function(log){
@@ -1199,6 +770,90 @@ var modal = {
       thisModal.find('[data-fn="scrollBottom"]').off().click(function(){
         thisModal.find('section .pre').scrollTop(thisModal.find('section .pre')[0].scrollHeight);
       });
+    },
+  },
+  volumes : {
+    load : function(thisHost){
+      var thisModal = $('[data-modal="volumes"]');
+      modal.display(thisModal);
+      var thisSection = thisModal.find('section');
+      var thisTable = thisSection.find('[data-table]');
+      var currentPageBadge = thisModal.find('[data-value="currentPage"]');
+      function loadControls(){
+        // Filter handler
+        var filterDelay;
+        thisModal.find('[data-fn="filterTable"]').off().keydown(function(){
+          var thisEl = $(this)
+          clearTimeout(filterDelay);
+          filterDelay = setTimeout(function(){
+            var query = thisEl.val();
+            filterTable(query,thisModal)
+            // mod.containers.filter(query,thisTable);
+          }, 300);
+        })
+      }
+      loadControls();
+      // Make initial request
+      serverRequest({'request': 'volumes', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
+    },
+    populate: function(data){
+      var thisModal = $('[data-modal="volumes"]');
+      var thisSection = thisModal.find('section');
+      var thisTable = thisSection.find('[data-table]');
+
+      var columns = ['CreatedAt','Driver','Mountpoint','Name','Scope','UsageData','Labels'];
+      buildTable(thisModal,data['volumes'],columns,10);
+      // If page not set, deafult to 1
+      var currentPage = thisModal.find('[data-value="currentPage"]').text();
+      if ( ! currentPage ) {
+        thisModal.find('[data-value="currentPage"]').text(1);
+        thisTable.find('.cell[data-page="1"]').show();
+      } else {
+        thisModal.find('[data-value="currentPage"]').text(parseInt(currentPage));
+        thisTable.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
+      }
+    },
+  },
+  images : {
+    load : function(thisHost){
+      var thisModal = $('[data-modal="images"]');
+      modal.display(thisModal);
+      var thisSection = thisModal.find('section');
+      var thisTable = thisSection.find('[data-table]');
+      var currentPageBadge = thisModal.find('[data-value="currentPage"]');
+      function loadControls(){
+        // Filter handler
+        var filterDelay;
+        thisModal.find('[data-fn="filterTable"]').off().keydown(function(){
+          var thisEl = $(this)
+          clearTimeout(filterDelay);
+          filterDelay = setTimeout(function(){
+            var query = thisEl.val();
+            filterTable(query,thisModal)
+            // mod.containers.filter(query,thisTable);
+          }, 300);
+        })
+      }
+      loadControls();
+      // Make initial request
+      serverRequest({'request': 'images', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
+    },
+    populate: function(data){
+      var thisModal = $('[data-modal="images"]');
+      var thisSection = thisModal.find('section');
+      var thisTable = thisSection.find('[data-table]');
+
+      var columns = ['Id','RepoTags','Containers','Labels','ParentId','Size','Created'];
+      buildTable(thisModal,data['images'],columns,10);
+      // If page not set, deafult to 1
+      var currentPage = thisModal.find('[data-value="currentPage"]').text();
+      if ( ! currentPage ) {
+        thisModal.find('[data-value="currentPage"]').text(1);
+        thisTable.find('.cell[data-page="1"]').show();
+      } else {
+        thisModal.find('[data-value="currentPage"]').text(parseInt(currentPage));
+        thisTable.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
+      }
     },
   },
 }
@@ -1260,6 +915,12 @@ socket.on('serverResponse', function(data) {
     case 'hostStats':
       mod.hostStats.populate(host,data)
       break;
+    case 'volumes':
+      modal.volumes.populate(data)
+      break;
+    case 'images':
+      modal.images.populate(data)
+
   }
 
 });
