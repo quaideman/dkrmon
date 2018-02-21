@@ -1,10 +1,11 @@
+## Imports
 import socket,json,struct,docker,os,sys,datetime
 
+## Functions
 def log(tuple):
     ''' Log messages to the console/log '''
     now = str(datetime.datetime.today()).split('.')[0]
     print(now,tuple)
-
 def startAgent():
     """ Start the agent  """
     def socketSnd(sock, msg):
@@ -55,7 +56,6 @@ def startAgent():
                 clientsocket.close()
     except:
         log(('ERR','Agent failed to start or exited abnormally'))
-
 def myRequests(rcvPayload):
     ''' Request handlers for requests made against this agent '''
     def dkrDetails(resource):
@@ -180,7 +180,6 @@ def myRequests(rcvPayload):
     except:
         rcvPayload['result'] = 'error'
         return rcvPayload
-
 def prereqs():
     ''' Check prereqs before starting the agent '''
     ## Create the dkrClient object
@@ -194,5 +193,5 @@ def prereqs():
         log(('dkrSock does not exist'))
         return False
 
-## Start the agent
+## Start
 startAgent() if prereqs() else sys.exit(1)
