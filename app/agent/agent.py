@@ -169,6 +169,14 @@ def myRequests(rcvPayload):
             rcvPayload['images'] = dkrDetails('Images')
             rcvPayload['result'] = 'success'
             return rcvPayload
+        if request == 'pruneVolumes':
+            rcvPayload['resultData'] = dkrClient.volumes.prune()
+            rcvPayload['result'] = 'success'
+            return rcvPayload
+        if request == 'pruneImages':
+            rcvPayload['resultData'] = dkrClient.images.prune()
+            rcvPayload['result'] = 'success'
+            return rcvPayload
     except:
         rcvPayload['result'] = 'error'
         return rcvPayload

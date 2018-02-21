@@ -24,6 +24,8 @@ var ui = {
     })
     // Disable dashboard selector
     $('.dashboard-selector-wrap').attr('data-active','false');
+    // Disable buttons
+    // $('.host button, .modal button').prop('disabled',true)
   },
   viewMode: function(){
     var width = $(window).innerWidth();
@@ -36,11 +38,46 @@ var ui = {
   notify: function(data){
     var element = $('#notify');
     element.empty();
-    $.each(data,function(){
-      if (this['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
-      var html = '<div><span class="icon '+this['result']+' material-icons">'+icon+'</span><span class="message">'+this['container']+'</span></div>'
-      element.append(html);
-    })
+    switch (data['request']) {
+      case 'containerStart':
+      case 'containerStop':
+      case 'containerRestart':
+        $.each(data['data'],function(){
+          if (this['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
+          var html = '<div><span class="icon '+this['result']+' material-icons">'+icon+'</span><span class="message">'+this['container']+'</span></div>'
+          element.append(html);
+        })
+        break;
+      case 'pruneVolumes':
+        if (data['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
+        if (data['resultData']['VolumesDeleted'] == null) {
+          var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">No volumes to prune</span></div>'
+          element.append(html);
+        } else {
+          $.each(data['resultData']['VolumesDeleted'],function(){
+            var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">'+this+'</span></div>'
+            element.append(html);
+          })
+        }
+
+        break;
+      case 'pruneImages':
+        if (data['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
+        if (data['resultData']['ImagesDeleted'] == null) {
+          var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">No images to prune</span></div>'
+          element.append(html);
+        } else {
+          $.each(data['resultData']['ImagesDeleted'],function(){
+            var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">'+this+'</span></div>'
+            element.append(html);
+          })
+        }
+
+        break;
+      default:
+        element.append('NO MATCH');
+    }
+
     element.clearQueue().fadeIn(200).delay(5000).fadeOut(200);
   },
   spinner: function(destroy){
@@ -369,6 +406,8 @@ function buildTable(container,data,columns,pageLimit){
   }
   var table = container.find('[data-table]');
   var currentPageBadge = container.find('[data-value="currentPage"]');
+  // Remove any placeholder classes
+  container.find('section').removeClass('placeholder');
   table.empty();
   // Build headers
   var columnCount = 0;
@@ -539,7 +578,17 @@ function filterTable(query,container){
       })
     }
 }
-
+function placeholder(state,section,message="No message") {
+  if (state == 'show') {
+    section.addClass('placeholder');
+    section.find('.placeholder-msg').text(message)
+    section.find('.placeholder-msg').siblings().hide();
+  } else {
+    section.removeClass('placeholder');
+    section.find('.placeholder-msg').text('')
+    section.find('.placeholder-msg').siblings().show();
+  }
+}
 // Modules
 var mod = {
   hostStats: {
@@ -700,8 +749,9 @@ var mod = {
           // Update host status
           hostStatusBadge.removeClass('cGreen').addClass('cRed').attr('title','Agent Unhealthy');
           hostStatusBadge.children('span').text('clear');
-          thisSection.addClass('placeholder')
-          thisTable.html('<div>Unable to connect to host</div>').css('grid-template-columns','auto');
+          // thisSection.addClass('placeholder')
+          // thisTable.html('<div>Unable to connect to host</div>').css('grid-template-columns','auto');
+          placeholder('show',thisSection,'Unable to connect to host...')
           // Disable container buttons
           thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
         }
@@ -719,8 +769,9 @@ var modal = {
   close: function(trigger){
     $('#modal-container').attr('data-active','false');
     trigger.parents('.modal').attr('data-active','false');
-    // Empty any Tables
+    // Empty any content
     trigger.parents('.modal').find('[data-table]').empty()
+    trigger.parents('.modal').find('.placeholder-msg').text('')
   },
   containerLog : {
     load : function(log){
@@ -729,9 +780,10 @@ var modal = {
       var preEl = thisSection.find('.pre')
       preEl.empty();
       if ( log.length == 1 && log[0].length == 0 ) {
-        preEl.html('<div class="placeholder">Nothing to see here</div>');
+        placeholder('show',thisSection,'Log is empty...')
+
       } else {
-        // thisSection.html('<pre></pre>');
+        placeholder('hide',thisSection)
         $.each(log,function(i,v){
           if (v) {preEl.append('<div class="value">'+v+'</div>')}
         })
@@ -779,6 +831,14 @@ var modal = {
       var thisSection = thisModal.find('section');
       var thisTable = thisSection.find('[data-table]');
       var currentPageBadge = thisModal.find('[data-value="currentPage"]');
+      thisModal.attr('data-host',thisHost.attr('data-host'))
+      // Make initial request
+      serverRequest({'request': 'volumes', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
+    },
+    populate: function(data){
+      var thisModal = $('[data-modal="volumes"]');
+      var thisSection = thisModal.find('section');
+      var thisTable = thisSection.find('[data-table]');
       function loadControls(){
         // Filter handler
         var filterDelay;
@@ -791,18 +851,24 @@ var modal = {
             // mod.containers.filter(query,thisTable);
           }, 300);
         })
+        // Refresh
+        thisModal.find('[data-fn="refresh"]').off().click(function(){
+          serverRequest({'request': 'volumes', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisModal.attr('data-host')})
+        })
+        // Prune
+        thisModal.find('[data-fn="prune"]').off().click(function(){
+          serverRequest({'request': 'pruneVolumes', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisModal.attr('data-host')})
+        })
       }
-      loadControls();
-      // Make initial request
-      serverRequest({'request': 'volumes', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
-    },
-    populate: function(data){
-      var thisModal = $('[data-modal="volumes"]');
-      var thisSection = thisModal.find('section');
-      var thisTable = thisSection.find('[data-table]');
 
       var columns = ['CreatedAt','Driver','Mountpoint','Name','Scope','UsageData','Labels'];
-      buildTable(thisModal,data['volumes'],columns,10);
+      if (data['volumes'] != undefined && data['volumes'].length > 0) {
+        placeholder('hide',thisSection)
+        buildTable(thisModal,data['volumes'],columns,10);
+        loadControls();
+      } else {
+        placeholder('show',thisSection,'No volumes found...')
+      }
       // If page not set, deafult to 1
       var currentPage = thisModal.find('[data-value="currentPage"]').text();
       if ( ! currentPage ) {
@@ -821,6 +887,14 @@ var modal = {
       var thisSection = thisModal.find('section');
       var thisTable = thisSection.find('[data-table]');
       var currentPageBadge = thisModal.find('[data-value="currentPage"]');
+      thisModal.attr('data-host',thisHost.attr('data-host'))
+      // Make initial request
+      serverRequest({'request': 'images', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
+    },
+    populate: function(data){
+      var thisModal = $('[data-modal="images"]');
+      var thisSection = thisModal.find('section');
+      var thisTable = thisSection.find('[data-table]');
       function loadControls(){
         // Filter handler
         var filterDelay;
@@ -833,18 +907,25 @@ var modal = {
             // mod.containers.filter(query,thisTable);
           }, 300);
         })
+        // Refresh
+        thisModal.find('[data-fn="refresh"]').off().click(function(){
+          serverRequest({'request': 'images', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisModal.attr('data-host')})
+        })
+        // Prune
+        thisModal.find('[data-fn="prune"]').off().click(function(){
+          serverRequest({'request': 'pruneImages', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisModal.attr('data-host')})
+        })
       }
-      loadControls();
-      // Make initial request
-      serverRequest({'request': 'images', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
-    },
-    populate: function(data){
-      var thisModal = $('[data-modal="images"]');
-      var thisSection = thisModal.find('section');
-      var thisTable = thisSection.find('[data-table]');
 
       var columns = ['Id','RepoTags','Containers','Labels','ParentId','Size','Created'];
-      buildTable(thisModal,data['images'],columns,10);
+      if (data['images'] != undefined && data['images'].length > 0) {
+        placeholder('hide',thisSection)
+        buildTable(thisModal,data['images'],columns,10);
+        loadControls();
+      } else {
+        placeholder('show',thisSection,'No images found...')
+      }
+
       // If page not set, deafult to 1
       var currentPage = thisModal.find('[data-value="currentPage"]').text();
       if ( ! currentPage ) {
@@ -904,7 +985,7 @@ socket.on('serverResponse', function(data) {
     case 'containerStart':
     case 'containerRestart':
       mod.containers.populate(host);
-      ui.notify(data['data'])
+      ui.notify(data)
       break;
     case 'containerLog':
       modal.containerLog.load(data['log'])
@@ -920,7 +1001,15 @@ socket.on('serverResponse', function(data) {
       break;
     case 'images':
       modal.images.populate(data)
-
+      break;
+    case 'pruneVolumes':
+      ui.notify(data)
+      modal.volumes.load(host)
+      break;
+    case 'pruneImages':
+      ui.notify(data)
+      modal.images.load(host)
+      break;
   }
 
 });
