@@ -133,6 +133,9 @@ def myRequests(rcvPayload):
     ## Switch the requests
     request = rcvPayload['request']
     try:
+        if request == 'hostHealth':
+            rcvPayload['result'] = 'healthy'
+            return rcvPayload
         if request == 'containers':
             rcvPayload['data'] = dkrDetails('Containers')
             rcvPayload['result'] = 'success'
@@ -147,7 +150,7 @@ def myRequests(rcvPayload):
                 try:
                     if request == 'containerStop': dkrClient.containers.get(container).stop()
                     if request == 'containerStart': dkrClient.containers.get(container).start()
-                    if request == 'containerRestart': dkrClient.containers.get(container).restart()
+                    if request == 'containerRestart': dkrClient.containers.get(container).restart(timeout=10)
                     returnData.append({'result':'success', 'container': container})
                 except:
                     returnData.append({'result':'error', 'container': container})
@@ -187,7 +190,7 @@ def prereqs():
     dkrSock = '/var/run/docker.sock'
     if os.path.exists(dkrSock):
         global dkrClient
-        dkrClient = docker.DockerClient(base_url='unix:/'+dkrSock)
+        dkrClient = docker.DockerClient(base_url='unix:/'+dkrSock,timeout=15)
         return True
     else:
         log(('dkrSock does not exist'))

@@ -83,7 +83,7 @@ def hostRequest(request):
     def makeRequest(request,host):
         try:
             hostSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            hostSocket.settimeout(10) # Time to wait for response
+            hostSocket.settimeout(20) # Time to wait for response
             sndPayload = request
             sndPayload = json.dumps(sndPayload) # Serialse
             sndPayload = sndPayload.encode() # Encode
