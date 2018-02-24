@@ -1,255 +1,5 @@
+// Establish a web socket
 var socket = io.connect('http://' + document.domain + ':' + location.port);
-
-
-var ui = {
-  defaults: function(){
-    var mods = $('.mod');
-    // Set collapse and pause states.
-    mods.each(function(){
-      $(this).attr('data-collapsed','false');
-      $(this).find('button[data-fn="toggleCollapse"] .icn').text('expand_less')
-      $(this).attr('data-paused','false');
-      $(this).find('button[data-fn="togglePause"] .icn').text('pause');
-    })
-    // Disable modals
-    $('.modal').each(function(){
-      $(this).attr('data-active','false');
-    })
-    // Disable dashboard selector
-    $('.dashboard-selector-wrap').attr('data-active','false');
-  },
-  // viewMode: function(){
-  //   var width = $(window).innerWidth();
-  //   // if (width >= 1700) {return 'large'}
-  //   if (width >= 1700) {return 'medium'}
-  //   if (width < 1700 && width >= 1000) {return 'medium'}
-  //   if (width < 1000 && width >= 600) {return 'small'}
-  //   if (width < 600) {return 'xsmall'}
-  // },
-  notify: function(data){
-    var element = $('#notify');
-    element.empty();
-    switch (data['request']) {
-      case 'containerStart':
-      case 'containerStop':
-      case 'containerRestart':
-        $.each(data['data'],function(){
-          if (this['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
-          var html = '<div><span class="icon '+this['result']+' material-icons">'+icon+'</span><span class="message">'+this['container']+'</span></div>'
-          element.append(html);
-        })
-        break;
-      case 'pruneVolumes':
-        if (data['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
-        if (data['resultData']['VolumesDeleted'] == null) {
-          var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">No volumes to prune</span></div>'
-          element.append(html);
-        } else {
-          $.each(data['resultData']['VolumesDeleted'],function(){
-            var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">'+this+'</span></div>'
-            element.append(html);
-          })
-        }
-
-        break;
-      case 'pruneImages':
-        if (data['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
-        if (data['resultData']['ImagesDeleted'] == null) {
-          var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">No images to prune</span></div>'
-          element.append(html);
-        } else {
-          $.each(data['resultData']['ImagesDeleted'],function(){
-            var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">'+this+'</span></div>'
-            element.append(html);
-          })
-        }
-
-        break;
-      default:
-        var html = '<div><span class="icon error material-icons">error_outline</span><span class="message">Something went wrong</span></div>'
-        element.append(html);
-    }
-
-    element.clearQueue().fadeIn(200).delay(5000).fadeOut(200);
-  },
-  spinner: function(destroy){
-    // Show waiting spinner
-    var element = $('#spinner-wrap');
-    if (destroy == 'destroy') {
-      element.clearQueue().fadeOut(200);
-    } else {
-      element.clearQueue().fadeIn(200);
-    }
-
-  },
-  jsonPretty : function(json){
-    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-        var cls = 'number';
-        if (/^"/.test(match)) {
-            if (/:$/.test(match)) {
-                cls = 'key';
-            } else {
-                cls = 'string';
-            }
-        } else if (/true|false/.test(match)) {
-            cls = 'boolean';
-        } else if (/null/.test(match)) {
-            cls = 'null';
-        }
-        return '<span class="' + cls + '">' + match + '</span>';
-    });
-  },
-}
-
-var dashboardControls = {
-  global: function(){
-    // Close modals
-    $('[data-fn="modalClose"]').click(function(){
-      modal.close($(this));
-    })
-  },
-  dashboard: function(){
-    // Collapse all modues in dashboard
-    $('button[data-fn="dashboardCollapse"]').click(function(){
-      $('.host').each(function(){
-        $(this).find('.mod[data-mod="containers"]').attr('data-collapsed','true');
-        $(this).find('.mod [data-fn="toggleCollapse"] .icn').text('expand_more');
-      })
-    })
-    // Expand all modues in dashboard
-    $('button[data-fn="dashboardExpand"]').click(function(){
-      $('.host').each(function(){
-        $(this).find('.mod').attr('data-collapsed','false');
-        $(this).find('.mod [data-fn="toggleCollapse"] .icn').text('expand_less');
-      })
-    })
-    // Change Dashboard
-    $('button[data-fn="dashboardSelect"]').click(function(){
-      var selector = $('.dashboard-selector-wrap')
-      var status = selector.attr('data-active');
-      if (status == 'false') {
-        selector.attr('data-active','true');
-      } else {
-        selector.attr('data-active','false');
-      }
-      selector.find('.dashboard-list .item').click(function(){
-        var dash = $(this).text();
-        document.location.assign('/dashboard/'+dash);
-      })
-    })
-    // Dashboard Filtering
-    var availableDashboards = $('.dashboard-list .item');
-    var filterDelay;
-    $('[data-fn="filterDashboards"]').keydown(function(){
-      var thisEl = $(this)
-      clearTimeout(filterDelay);
-      filterDelay = setTimeout(function(){
-        var query = thisEl.val();
-        if ( query.length > 0 ) {
-          // Get the items that match query
-          var items = []
-          availableDashboards.each(function(){
-            if ($(this).text().indexOf(query) >= 0) {
-              items.push($(this).text());
-            }
-          })
-          // Hide all items that are not in rows
-          if ( items.length > 0 ) {
-            availableDashboards.each(function(){
-              if ( $.inArray( $(this).text(), items) > -1 ) {
-                $(this).show()
-              } else {
-                $(this).hide()
-              }
-            })
-          }
-        } else {
-          availableDashboards.each(function(){
-            $(this).show();
-          })
-        }
-      }, 300);
-    })
-  },
-  host: function(){
-
-    // Collapse host
-    // $('.host button[data-fn="collapseHost"]').click(function(){
-    //   $(this).parents('.host').find('.mod').each(function(){
-    //     $(this).attr('data-collapsed','true');
-    //     $(this).find('[data-fn="toggleCollapse"] .icn').text('expand_more');
-    //   })
-    // })
-    // Expand host
-    // $('.host button[data-fn="expandHost"]').click(function(){
-    //   $(this).parents('.host').find('.mod').each(function(){
-    //     $(this).attr('data-collapsed','false');
-    //     $(this).find('[data-fn="toggleCollapse"] .icn').text('expand_less');
-    //   })
-    // })
-    // Pause host
-    // $('.host button[data-fn="pauseHost"]').click(function(){
-    //   var mods = $(this).parents('.host').find('.mod');
-    //   mods.each(function(){
-    //     $(this).attr('data-paused','true');
-    //   })
-    // })
-    // Resume host
-    // $('.host button[data-fn="resumeHost"]').click(function(){
-    //   var mods = $(this).parents('.host').find('.mod');
-    //   mods.each(function(){
-    //     $(this).attr('data-paused','false');
-    //   })
-    // })
-    // Volumes
-    $('.host button[data-fn="volumes"]').click(function(){
-      var thisHost = $(this).parents('.host');
-      modal.volumes.load(thisHost)
-    })
-    // Images
-    $('.host button[data-fn="images"]').click(function(){
-      var thisHost = $(this).parents('.host');
-      modal.images.load(thisHost)
-    })
-  },
-  mod: function(){
-    // Toggle collapse module
-    $('.mod header [data-fn="toggleCollapse"]').click(function(){
-      var mode = ui.viewMode();
-      var thisMod = $(this).parents('.mod');
-      var thisHost = thisMod.parents('.host');
-      var collapsed = thisMod.attr('data-collapsed');
-      if (collapsed == 'false') {
-        thisMod.attr('data-collapsed','true');
-        thisMod.find('[data-fn="toggleCollapse"] .icn').text('expand_more');
-      } else {
-        thisMod.attr('data-collapsed','false');
-        thisMod.find('[data-fn="toggleCollapse"] .icn').text('expand_less');
-      }
-    })
-    // Toggle pause module
-    $('button[data-fn="togglePause"]').click(function(){
-      var mod = $(this).parents('.mod');
-      var state = mod.attr('data-paused');
-      if (state == 'false') {
-        mod.attr('data-paused','true');
-      } else {
-        mod.attr('data-paused','false');
-        // Clear any selected cells and disable controls
-        mod.find('.cell.selected').removeClass('selected');
-        mod.find('[data-fn^="container"]').prop('disabled',true);
-      }
-    })
-  },
-  // Actions
-  load: function(){
-    this.global();
-    this.dashboard();
-    this.host();
-    this.mod();
-  },
-}
 
 // Global functions
 function buildTable(container,data,columns,pageLimit){
@@ -476,7 +226,203 @@ function placeholder(state,section,message="No message") {
   }
 }
 
-// Host
+// Core
+var ui = {
+  defaults: function(){
+    var mods = $('.mod');
+    // Set collapse and pause states.
+    mods.each(function(){
+      $(this).attr('data-collapsed','false');
+      $(this).find('button[data-fn="toggleCollapse"] .icn').text('expand_less')
+      $(this).attr('data-paused','false');
+      $(this).find('button[data-fn="togglePause"] .icn').text('pause');
+    })
+    // Disable modals
+    $('.modal').each(function(){
+      $(this).attr('data-active','false');
+    })
+    // Disable dashboard selector
+    $('.dashboard-selector-wrap').attr('data-active','false');
+  },
+  // viewMode: function(){
+  //   var width = $(window).innerWidth();
+  //   // if (width >= 1700) {return 'large'}
+  //   if (width >= 1700) {return 'medium'}
+  //   if (width < 1700 && width >= 1000) {return 'medium'}
+  //   if (width < 1000 && width >= 600) {return 'small'}
+  //   if (width < 600) {return 'xsmall'}
+  // },
+  notify: function(data){
+    var element = $('#notify');
+    element.empty();
+    switch (data['request']) {
+      case 'containerStart':
+      case 'containerStop':
+      case 'containerRestart':
+        $.each(data['data'],function(){
+          if (this['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
+          var html = '<div><span class="icon '+this['result']+' material-icons">'+icon+'</span><span class="message">'+this['container']+'</span></div>'
+          element.append(html);
+        })
+        break;
+      case 'pruneVolumes':
+        if (data['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
+        if (data['resultData']['VolumesDeleted'] == null) {
+          var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">No volumes to prune</span></div>'
+          element.append(html);
+        } else {
+          $.each(data['resultData']['VolumesDeleted'],function(){
+            var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">'+this+'</span></div>'
+            element.append(html);
+          })
+        }
+
+        break;
+      case 'pruneImages':
+        if (data['result'] == 'success') {var icon = 'check_circle'} else {var icon = 'error_outline'};
+        if (data['resultData']['ImagesDeleted'] == null) {
+          var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">No images to prune</span></div>'
+          element.append(html);
+        } else {
+          $.each(data['resultData']['ImagesDeleted'],function(){
+            var html = '<div><span class="icon success material-icons">'+icon+'</span><span class="message">'+this+'</span></div>'
+            element.append(html);
+          })
+        }
+
+        break;
+      default:
+        var html = '<div><span class="icon error material-icons">error_outline</span><span class="message">Something went wrong</span></div>'
+        element.append(html);
+    }
+
+    element.clearQueue().fadeIn(200).delay(5000).fadeOut(200);
+  },
+  spinner: function(destroy){
+    // Show waiting spinner
+    var element = $('#spinner-wrap');
+    if (destroy == 'destroy') {
+      element.clearQueue().fadeOut(200);
+    } else {
+      element.clearQueue().fadeIn(200);
+    }
+
+  },
+  jsonPretty : function(json){
+    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+        var cls = 'number';
+        if (/^"/.test(match)) {
+            if (/:$/.test(match)) {
+                cls = 'key';
+            } else {
+                cls = 'string';
+            }
+        } else if (/true|false/.test(match)) {
+            cls = 'boolean';
+        } else if (/null/.test(match)) {
+            cls = 'null';
+        }
+        return '<span class="' + cls + '">' + match + '</span>';
+    });
+  },
+}
+var dashboard = {
+  load: function(){
+    // Close modals
+    $('[data-fn="modalClose"]').click(function(){
+      modal.close($(this));
+    })
+    // Collapse all modues in dashboard
+    $('button[data-fn="dashboardCollapse"]').click(function(){
+      $('.host').each(function(){
+        $(this).find('.mod[data-mod="containers"]').attr('data-collapsed','true');
+        $(this).find('.mod [data-fn="toggleCollapse"] .icn').text('expand_more');
+      })
+    })
+    // Expand all modues in dashboard
+    $('button[data-fn="dashboardExpand"]').click(function(){
+      $('.host').each(function(){
+        $(this).find('.mod').attr('data-collapsed','false');
+        $(this).find('.mod [data-fn="toggleCollapse"] .icn').text('expand_less');
+      })
+    })
+    // Change Dashboard
+    $('button[data-fn="dashboardSelect"]').click(function(){
+      var selector = $('.dashboard-selector-wrap')
+      var status = selector.attr('data-active');
+      if (status == 'false') {
+        selector.attr('data-active','true');
+      } else {
+        selector.attr('data-active','false');
+      }
+      selector.find('.dashboard-list .item').click(function(){
+        var dash = $(this).text();
+        document.location.assign('/dashboard/'+dash);
+      })
+    })
+    // Dashboard Filtering
+    var availableDashboards = $('.dashboard-list .item');
+    var filterDelay;
+    $('[data-fn="filterDashboards"]').keydown(function(){
+      var thisEl = $(this)
+      clearTimeout(filterDelay);
+      filterDelay = setTimeout(function(){
+        var query = thisEl.val();
+        if ( query.length > 0 ) {
+          // Get the items that match query
+          var items = []
+          availableDashboards.each(function(){
+            if ($(this).text().indexOf(query) >= 0) {
+              items.push($(this).text());
+            }
+          })
+          // Hide all items that are not in rows
+          if ( items.length > 0 ) {
+            availableDashboards.each(function(){
+              if ( $.inArray( $(this).text(), items) > -1 ) {
+                $(this).show()
+              } else {
+                $(this).hide()
+              }
+            })
+          }
+        } else {
+          availableDashboards.each(function(){
+            $(this).show();
+          })
+        }
+      }, 300);
+    })
+    // Toggle collapse module
+    $('.mod header [data-fn="toggleCollapse"]').click(function(){
+      // var mode = ui.viewMode();
+      var thisMod = $(this).parents('.mod');
+      var thisHost = thisMod.parents('.host');
+      var collapsed = thisMod.attr('data-collapsed');
+      if (collapsed == 'false') {
+        thisMod.attr('data-collapsed','true');
+        thisMod.find('[data-fn="toggleCollapse"] .icn').text('expand_more');
+      } else {
+        thisMod.attr('data-collapsed','false');
+        thisMod.find('[data-fn="toggleCollapse"] .icn').text('expand_less');
+      }
+    })
+    // Toggle pause module
+    $('button[data-fn="togglePause"]').click(function(){
+      var mod = $(this).parents('.mod');
+      var state = mod.attr('data-paused');
+      if (state == 'false') {
+        mod.attr('data-paused','true');
+      } else {
+        mod.attr('data-paused','false');
+        // Clear any selected cells and disable controls
+        mod.find('.cell.selected').removeClass('selected');
+        mod.find('[data-fn^="container"]').prop('disabled',true);
+      }
+    })
+  },
+}
 var host = {
   health : {
     request : function(thisHost){
@@ -501,6 +447,16 @@ var host = {
   load : function(thisHost){
     // Enable host buttons
     thisHost.find('.header-controls button').prop('disabled',false);
+    // Volumes button
+    $('.host button[data-fn="volumes"]').click(function(){
+      var thisHost = $(this).parents('.host');
+      modal.volumes.load(thisHost)
+    })
+    // Images button
+    $('.host button[data-fn="images"]').click(function(){
+      var thisHost = $(this).parents('.host');
+      modal.images.load(thisHost)
+    })
     // Load modules
     mod.containers.load(thisHost);
   },
@@ -514,8 +470,6 @@ var host = {
 
   },
 }
-
-// Modules
 var mod = {
   hostStats: {
     unload : function(thisHost){
@@ -667,8 +621,6 @@ var mod = {
     },
   },
 }
-
-// Modals
 var modal = {
   display: function(modal){
     $('#modal-container').attr('data-active','true');
@@ -850,17 +802,11 @@ var modal = {
 // Stuff to run on load
 $(document).ready(function(){
   ui.defaults()
-  dashboardControls.load()
+  dashboard.load()
   $('.host').each(function(){
     host.health.request($(this));
     host.load($(this))
   })
-
-})
-
-// Stuff to do on window resize
-$(window).resize(function(){
-  // $('.tabulator').tabulator("redraw");
 })
 
 // Stuff to do on interval
@@ -872,10 +818,7 @@ window.setInterval(function(){
 
 // Server Requests
 function serverRequest(request){
-  if ( request['request'] != 'containers' && request['request'] != 'hostStats') {
-    console.log('serverRequest',request);
-  }
-
+  console.log('serverRequest',request);
   if ( request['request'] == 'containerStart' || request['request'] == 'containerStop' || request['request'] == 'containerRestart' ) { ui.spinner() }
   socket.emit('serverRequest', request);
 }
@@ -883,9 +826,8 @@ function serverRequest(request){
 // Server Responses
 socket.on('serverResponse', function(reponseData) {
   if (reponseData) {
-    if ( reponseData['request'] != 'containers' && reponseData['request'] != 'hostStats') {console.log("serverResponse",reponseData)}
+    console.log("serverResponse",reponseData)
     if ( reponseData['request'] == 'containerStart' || reponseData['request'] == 'containerStop' || reponseData['request'] == 'containerRestart' ) { ui.spinner('destroy') }
-
     var hostEl = $('[data-host="'+reponseData['host']+'"]');
     switch (reponseData['request']) {
       case 'containers':
