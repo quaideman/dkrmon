@@ -7,6 +7,6 @@ RUN apk update && apk upgrade \
 
 ##COPY agent/ $DKRMON_PATH/app
 
-WORKDIR $DKRMON_PATH
+WORKDIR $DKRMON_PATH/app
 EXPOSE 5000/tcp
-CMD ["python","app/agent.py"]
+CMD ["python","agent.py"]

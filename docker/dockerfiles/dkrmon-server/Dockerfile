@@ -7,7 +7,7 @@ RUN apk update && apk upgrade \
 
 ##COPY server/ $DKRMON_PATH/app
 RUN pip3 install flask flask-socketio eventlet
-ENV FLASK_APP=app/server.py
-WORKDIR $DKRMON_PATH
+ENV FLASK_APP=server.py
+WORKDIR $DKRMON_PATH/app
 EXPOSE 5000/tcp
 CMD ["flask", "run", "--host=0.0.0.0"]

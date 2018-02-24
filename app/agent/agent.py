@@ -184,15 +184,15 @@ def myRequests(rcvPayload):
 def prereqs():
     ''' Check prereqs before starting the agent '''
     ## Create the dkrClient object
-    # dkrSock = '/dkrmon/socket/docker.sock'
-    dkrSock = '/var/run/docker.sock'
+    dkrSock = '/dkrmon/app/docker.sock'
     if os.path.exists(dkrSock):
         global dkrClient
         dkrClient = docker.DockerClient(base_url='unix:/'+dkrSock,timeout=15)
         return True
     else:
-        log(('dkrSock does not exist'))
+        log((dkrSock, 'does not exist'))
         return False
 
 ## Start
+log(('Starting agent...'))
 startAgent() if prereqs() else sys.exit(1)
