@@ -5,12 +5,10 @@ services:
     image: quaide/dkrmon:agent
     ports:
       - '30000:5000'
-    # environment:
-      # - DKRMON_PORT=9999
     volumes:
-      - /home/tom/dkrmon/app/agent/agent.py:/dkrmon/app/agent.py:ro
-      - /var/run/docker.sock:/dkrmon/socket/docker.sock:ro
-      - /sys/fs/cgroup/memory/docker/:/dkrmon/stats/memory/:ro
+      - /media/sf_agent/agent.py:/dkrmon/app/agent.py:ro
+      - /var/run/docker.sock:/dkrmon/app/docker.sock:ro
+      # - /sys/fs/cgroup/memory/docker/:/dkrmon/stats/memory/:ro
       - /var/lib/docker/:/var/lib/docker/:ro
     mem_limit: 128m
     tty: true

@@ -185,7 +185,7 @@ def prereqs():
     ''' Check prereqs before starting the agent '''
     ## Create the dkrClient object
     # dkrSock = '/dkrmon/socket/docker.sock'
-    dkrSock = '/var/run/docker.sock'
+    dkrSock = 'docker.sock'
     if os.path.exists(dkrSock):
         global dkrClient
         dkrClient = docker.DockerClient(base_url='unix:/'+dkrSock,timeout=15)

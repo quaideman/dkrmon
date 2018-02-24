@@ -1,9 +1,9 @@
 {
   "dashboards": [
     {
-      "name":"ecase.aws","hosts": [
-        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
-        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+      "name":"Example Dashboard","hosts": [
+        {"name":"dkrmon-agent1","ip":"192.168.1.201","port":"30000"},
+        {"name":"dkrmon-agent2","ip":"192.168.1.202","port":"30000"}
       ]
     },
     {
@@ -16,32 +16,32 @@
     },
     {
       "name":"Another dashboard","hosts": [
-        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
-        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+        {"name":"dkrmon-agent1","ip":"192.168.1.201","port":"30000"},
+        {"name":"dkrmon-agent2","ip":"192.168.1.202","port":"30001"}
       ]
     },
     {
       "name":"Some other","hosts": [
-        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
-        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+        {"name":"dkrmon-agent1","ip":"192.168.1.201","port":"30000"},
+        {"name":"dkrmon-agent2","ip":"192.168.1.202","port":"30000"}
       ]
     },
     {
       "name":"Cars and Motors","hosts": [
-        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
-        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+        {"name":"dkrmon-agent1","ip":"192.168.1.201","port":"30000"},
+        {"name":"dkrmon-agent2","ip":"192.168.1.202","port":"30000"}
       ]
     },
     {
       "name":"Example Dash","hosts": [
-        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
-        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+        {"name":"dkrmon-agent1","ip":"192.168.1.201","port":"30000"},
+        {"name":"dkrmon-agent2","ip":"192.168.1.202","port":"30000"}
       ]
     },
     {
       "name":"Just one more","hosts": [
-        {"name":"Server 1","ip":"192.168.1.191","port":"5000"},
-        {"name":"Server 2","ip":"192.168.1.192","port":"5000"}
+        {"name":"dkrmon-agent1","ip":"192.168.1.201","port":"30000"},
+        {"name":"dkrmon-agent2","ip":"192.168.1.202","port":"30000"}
       ]
     }
   ]

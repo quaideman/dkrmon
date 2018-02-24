@@ -1,9 +1,12 @@
 ## Builds DKRMON Agent
-FROM dkrmon:base
-ARG DKRMON_PATH=/dkrmon/app
-
+FROM python:3.6-alpine
+ARG DKRMON_PATH=/dkrmon
 RUN apk update && apk upgrade \
-		&& pip3 install docker
+		&& pip3 install docker \
+		&& mkdir -p $DKRMON_PATH/app $DKRMON_PATH/stats $DKRMON_PATH/logs
+
+##COPY agent/ $DKRMON_PATH/app
 
 WORKDIR $DKRMON_PATH
-CMD ["python","agent.py"]
+EXPOSE 5000/tcp
+CMD ["python","app/agent.py"]

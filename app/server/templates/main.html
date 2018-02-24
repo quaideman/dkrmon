@@ -1,21 +1,18 @@
 <!DOCTYPE html>
 <html>
   <head>
-    {% include 'head.html' %}
+    <meta charset="UTF-8">
+    <title>DKRMON</title>
+    <script src="/static/js/jquery-3.2.1.min.js"></script>
+    <script type="text/javascript" src="/static/js/socket.io.min.js"></script>
+    <script type="text/javascript" src="/static/js/main.js"></script>
+    <link rel="stylesheet" href="/static/style/main.css">
   </head>
 
   <body>
-    <div class="dashboard" data-dashboard="{{ dashboard }}">
-      {% include 'dashboardHeader.html' %}
-      {% for host in hosts %}
-        {% include 'host.html' %}
-      {% endfor %}
-    </div>
+    {% include 'dashboard.html' %}
     <div id="notify"></div>
     <div id="spinner-wrap" class="spinner"></div>
-    <div id="modal-container">
-      {% include 'modals.html' %}
-    </div>
-
+    {% include 'modals.html' %}
   </body>
 </html>

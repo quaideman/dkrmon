@@ -1,0 +1,14 @@
+<div class="host" data-host="{{ host['name'] }}">
+  <header data-header="host">
+    <div class="header-title">{{ host['name'] }}</div>
+    <div class="header-controls">
+      <div class="badge">
+          <span class="icn md-18" data-value="hostStatus"></span>
+        </div>
+      <button class="btn1" data-fn="volumes" title="Show Volumes"><span class="icn">storage</span></button>
+      <button class="btn1" data-fn="images" title="Show Images"><span class="icn">layers</span></button>
+    </div>
+  </header>
+  {% include 'hostStats.html' %}
+  {% include 'containers.html' %}
+</div>

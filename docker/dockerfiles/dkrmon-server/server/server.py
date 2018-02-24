@@ -13,6 +13,11 @@ socketio = SocketIO(app)
 ## Routes
 @app.route('/')
 def loadDefault():
+    # agents = []
+    ## Get just the agent names
+    # for agent in dbAgentGetAll()['data']:
+    #     agents.append(agent['name'])
+    # return render_template('main.html', hosts=dbAgentGetAll()['data'])
     dashboards = getDashboard()
     return render_template('main.html', dashboards=dashboards, dashboard=dashboards[0]['name'], hosts=dashboards[0]['hosts'])
 @app.route('/dashboard/<dashboard>')
@@ -78,10 +83,7 @@ def hostRequest(request):
     def makeRequest(request,host):
         try:
             hostSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            if request['request'] == 'hostHealth':
-                hostSocket.settimeout(0.5) # Time to wait for response
-            else:
-                hostSocket.settimeout(20) # Time to wait for response
+            hostSocket.settimeout(20) # Time to wait for response
             sndPayload = request
             sndPayload = json.dumps(sndPayload) # Serialse
             sndPayload = sndPayload.encode() # Encode
@@ -110,7 +112,6 @@ def serverRequest(request):
     ''' Client requests against this server '''
     # log(('INFO','Client request',str(request)))
     returnData = hostRequest(request)
-    # log(('INFO','Server response',str(returnData)))
     emit('serverResponse', returnData)
 
 ## Flask
