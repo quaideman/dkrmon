@@ -6,6 +6,15 @@ def log(tuple):
     ''' Log messages to the console/log '''
     now = str(datetime.datetime.today()).split('.')[0]
     print(now,tuple)
+def fileContents(filePath):
+    try:
+        fileObj = open(filePath)
+        returnData = fileObj.read().strip('\n')
+        fileObj.close()
+        return returnData
+    except:
+        return False
+
 def startAgent():
     """ Start the agent  """
     def socketSnd(sock, msg):
@@ -58,7 +67,26 @@ def startAgent():
 def myRequests(rcvPayload):
     ''' Request handlers for requests made against this agent '''
     def dkrDetails(resource):
+        def containerStatMemory(container):
+            try:
+                usage = fileContents("/dkrmon/stats/memory/{}/memory.usage_in_bytes".format(container))
+                limit = fileContents("/dkrmon/stats/memory/{}/memory.limit_in_bytes".format(container))
+                ## Convert to MB
+                usageMB = (int(usage) / 1024) / 1024
+                limitMB = (int(limit) / 1024) / 1024
+                ## Get the percentage
+                pct = (int(usageMB) / int(limitMB)) * 100
+                returnData = {'Usage':int(usageMB),'Limit':int(limitMB),'Pct':int(pct)}
+            except:
+                returnData = "null"
+            else:
+                return returnData
+
         returnData = dkrClient.df()
+        if resource == 'Containers':
+            for container in returnData['Containers']:
+                container['Memory'] = containerStatMemory(container['Id'])
+
         return returnData[resource]
     def hostStatCpu():
         try:
@@ -128,6 +156,7 @@ def myRequests(rcvPayload):
             return returnData['usagePct']
         except:
             return {'result':'error','message':"Error in hostInfoStorage"}
+
     ## Switch the requests
     request = rcvPayload['request']
     try:

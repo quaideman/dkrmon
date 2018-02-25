@@ -687,5 +687,24 @@ button {
       background-color: lighten(@c1,25%);
       color: white;
     }
+    &[data-column="Memory"] {
+      .bar-wrap {
+        background-color: lighten(@c1, 5%);
+        width: 100%;
+        height: 8px;
+        display: flex;
+        align-items: center;
+        padding: 3px;
+        border-radius: 10px;
+        overflow: hidden;
+        .bar {
+          width: 0%;
+          transition: width 1s;
+          background-color: lighten(@c1, 30%);
+          height: 6px;
+          border-radius: 6px;
+        }
+      }
+    }
   }
 }

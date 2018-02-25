@@ -11,17 +11,19 @@ function buildTable(container,data,columns,pageLimit){
       switch (key) {
         case 'Ports':
           // Iterate over X number of ports
-          returnData = ""
+          var returnData = {'value':'','tooltip':''}
           $.each(data,function(i,v){
-            returnData += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
+            returnData.value += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
+            returnData.tooltip += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
           })
           break;
         case 'Names':
         case 'RepoTags':
           // Iterate over X number of names
-          returnData = ""
+          var returnData = {'value':'','tooltip':''}
           $.each(data,function(i,v){
-            returnData += v
+            returnData.value += v
+            returnData.tooltip += v
           })
           break;
         case 'Labels':
@@ -31,6 +33,11 @@ function buildTable(container,data,columns,pageLimit){
           $.each(data,function(i,v){
             returnData += i+":"+v+" "
           })
+          break;
+        case 'Memory':
+          var returnData = {'value':'','tooltip':''}
+          returnData.value = '<div class="bar-wrap"><div class="bar" style="width: '+data['Pct']+'%"></div></div>'
+          returnData.tooltip = data['Usage']+"/"+data['Limit']+" MB ("+data['Pct']+'%)'
           break;
         default:
           returnData = "NO MATCH"
@@ -66,8 +73,8 @@ function buildTable(container,data,columns,pageLimit){
       if ($.inArray(i,columns) > -1) {
         // Check whether the objet is an array that needs more iteration
         if ($.type(v) == "array" || $.type(v) == "object" ) {
-          var value = cellFormat(i,v);
-          var cell = '<div class="cell" data-page="'+pageCount+'" data-row="'+rowCount+'" data-column="'+i+'" title="'+value+'">'+value+'</div>'
+          var cellFormatted = cellFormat(i,v);
+          var cell = '<div class="cell" data-page="'+pageCount+'" data-row="'+rowCount+'" data-column="'+i+'" title="'+cellFormatted['tooltip']+'">'+cellFormatted['value']+'</div>'
         } else {
           var cell = '<div class="cell" data-page="'+pageCount+'" data-row="'+rowCount+'" data-column="'+i+'" title="'+v+'">'+v+'</div>'
         }
@@ -142,10 +149,10 @@ function buildTable(container,data,columns,pageLimit){
   if ( ! currentPage ) {
     table.attr('data-page','1')
     container.find('[data-value="currentPage"]').text(1);
-    table.find('.cell[data-page="1"]').show();
+    table.find('.cell[data-page="1"]').css('display','flex');
   } else {
     container.find('[data-value="currentPage"]').text(parseInt(currentPage));
-    table.find('.cell[data-page="'+parseInt(currentPage)+'"]').show();
+    table.find('.cell[data-page="'+parseInt(currentPage)+'"]').css('display','flex');
   }
   // Apply any filters that may be applied
   var tableFilter = table.attr('data-filter');
@@ -509,7 +516,7 @@ var mod = {
       // Disable container buttons
       thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
       // Populate table with data
-      var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status'];
+      var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status','Memory'];
       buildTable(thisMod,responseData['data'],columns,10)
       // Get counts
       countTotal = responseData['data'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
