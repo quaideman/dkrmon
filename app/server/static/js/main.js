@@ -141,10 +141,10 @@ function buildTable(container,data,columns,pageLimit){
   if ( ! currentPage ) {
     table.attr('data-page','1')
     container.find('[data-value="currentPage"]').text(1);
-    table.find('.cell[data-page="1"]').css('display','flex');
+    table.find('.cell[data-page="1"]').css('display','block');
   } else {
     container.find('[data-value="currentPage"]').text(parseInt(currentPage));
-    table.find('.cell[data-page="'+parseInt(currentPage)+'"]').css('display','flex');
+    table.find('.cell[data-page="'+parseInt(currentPage)+'"]').css('display','block');
   }
   // Apply any filters that may be applied
   var tableFilter = table.attr('data-filter');
