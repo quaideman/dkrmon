@@ -1,5 +1,5 @@
 ## Imports
-import socket,json,struct,docker,os,sys,datetime
+import socket,json,struct,docker,os,sys,datetime,threading
 
 ## Functions
 def log(tuple):
@@ -14,7 +14,6 @@ def fileContents(filePath):
         return returnData
     except:
         return False
-
 def startAgent():
     """ Start the agent  """
     def socketSnd(sock, msg):
@@ -41,6 +40,8 @@ def startAgent():
     interface = "0.0.0.0"
     port=5000 if not os.environ.get('DKRMON_PORT') else int(os.environ.get('DKRMON_PORT'))
     try:
+        log(('Starting container stat streams...'))
+        containerStatCollection()
         ## Create a socket object
         serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serversocket.bind((interface, port)) # Bind
@@ -64,28 +65,51 @@ def startAgent():
                 clientsocket.close()
     except:
         log(('ERR','Agent failed to start or exited abnormally'))
+def containerStatCollection(refresh=False):
+    ''' Create dict of container stat generator objects '''
+    containers = dkrClient.df()['Containers']
+    if not refresh:
+        log(('Defining containerStats'))
+        global containerStats
+        containerStats = {}
+    for container in containers:
+        if container['State'] == "running":
+            if container['Id'] not in containerStats:
+                log((container['Id'],'not in containerStats - adding'))
+                containerStats[container['Id']] = dkrClient.containers.get(container['Id']).stats(stream=True,decode=True)
+
 def myRequests(rcvPayload):
     ''' Request handlers for requests made against this agent '''
     def dkrDetails(resource):
-        def containerStatMemory(container):
+        def stats(containerId):
             try:
-                usage = fileContents("/dkrmon/stats/memory/{}/memory.usage_in_bytes".format(container))
-                limit = fileContents("/dkrmon/stats/memory/{}/memory.limit_in_bytes".format(container))
-                ## Convert to MB
-                usageMB = (int(usage) / 1024) / 1024
-                limitMB = (int(limit) / 1024) / 1024
-                ## Get the percentage
-                pct = (int(usageMB) / int(limitMB)) * 100
-                returnData = {'Usage':int(usageMB),'Limit':int(limitMB),'Pct':int(pct)}
+                for stat in containerStats[containerId]:
+                    returnData = stat
+                    break
             except:
                 returnData = "null"
             else:
                 return returnData
-
+        # def containerStatMemory(container):
+        #     try:
+        #         usage = fileContents("/dkrmon/stats/memory/{}/memory.kmem.usage_in_bytes".format(container))
+        #         limit = fileContents("/dkrmon/stats/memory/{}/memory.kmem.limit_in_bytes".format(container))
+        #         ## Convert to MB
+        #         usageMB = (int(usage) / 1024) / 1024
+        #         limitMB = (int(limit) / 1024) / 1024
+        #         pct = (int(memoryUsage) / int(memoryLimit)) * 100
+        #         returnData = {'Usage':usageMB,'Limit':limitMB,'Pct':int(pct)}
+        #     except:
+        #         returnData = "null"
+        #     else:
+        #         return returnData
         returnData = dkrClient.df()
         if resource == 'Containers':
+            ## Refresh containerStatCollection
+            containerStatCollection("refresh")
             for container in returnData['Containers']:
-                container['Memory'] = containerStatMemory(container['Id'])
+                #container['Memory'] = containerStatMemory(container['Id'])
+                container['Stats'] = stats(container['Id'])
 
         return returnData[resource]
     def hostStatCpu():
@@ -112,10 +136,10 @@ def myRequests(rcvPayload):
             avg1Pct = (float(avg1) / cpuCount) * 100
             avg5Pct = (float(avg5) / cpuCount) * 100
             # returnData = {'avg1':float(avg1),'avg5':float(avg5),'avg15':float(avg15),'avg1Pct':int(avg1Pct),'avg5Pct':int(avg5Pct)}
-            return str(int(avg1Pct))
+            return int(avg1Pct)
         except:
             return {'result':'error','message':'Unable to get cpu info'}
-    def hostStatRam():
+    def hostStatMemory():
         try:
             fileObj = open('/proc/meminfo')
             fileContents = fileObj.read().split('\n')
@@ -135,7 +159,7 @@ def myRequests(rcvPayload):
                 'memUsage':int( int(usage) / 1024 ),
                 'memUsagePct':int(usagePct),
             }
-            return str(returnData['memUsagePct'])
+            return returnData['memUsagePct']
         except:
             return {'result':'error','message':'Unable to get host memory info'}
     def hostInfoStorage():
@@ -187,10 +211,16 @@ def myRequests(rcvPayload):
             rcvPayload['details'] = dkrClient.containers.get(rcvPayload['container']).attrs
             rcvPayload['result'] = 'success'
             return rcvPayload
-        if request == 'hostStats':
-            rcvPayload['stats'] = {'cpu': hostStatCpu(),'ram':hostStatRam(),'disk':hostInfoStorage()}
-            rcvPayload['result'] = 'success'
+        if request == 'hostCpu':
+            rcvPayload['cpuPct'] = hostStatCpu()
             return rcvPayload
+        if request == 'hostMemory':
+            rcvPayload['memoryPct'] = hostStatMemory()
+            return rcvPayload
+        # if request == 'hostStats':
+        #     rcvPayload['stats'] = {'cpu': hostStatCpu(),'ram':hostStatRam(),'disk':hostInfoStorage()}
+        #     rcvPayload['result'] = 'success'
+        #     return rcvPayload
         if request == 'volumes':
             rcvPayload['volumes'] = dkrDetails('Volumes')
             rcvPayload['result'] = 'success'

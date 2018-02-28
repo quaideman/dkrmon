@@ -1,4 +1,4 @@
-version: '2.1'
+version: '2.2'
 services:
   nginx01:
     image: "nginx:alpine"
@@ -18,11 +18,12 @@ services:
       - "80"
     mem_limit: 10m
     mem_reservation: 5m
+    cpus: 0.5
     healthcheck:
       test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
       interval: 30s
       timeout: 10s
-      retries: 33
+      retries: 3
 
   nginx03:
     image: "nginx:alpine"
@@ -30,6 +31,7 @@ services:
       - "80"
     mem_limit: 10m
     mem_reservation: 5m
+    cpus: 0.5
     healthcheck:
       test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
       interval: 30s
@@ -42,6 +44,7 @@ services:
       - "80"
     mem_limit: 10m
     mem_reservation: 5m
+    cpus: 0.5
     healthcheck:
       test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
       interval: 30s

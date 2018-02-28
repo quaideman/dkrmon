@@ -3,12 +3,21 @@
     <div class="header-title">{{ host['name'] }}</div>
     <div class="header-controls">
       <div class="badge">
-          <span class="icn md-18" data-value="hostStatus"></span>
-        </div>
+        <span class="str">CPU</span>
+        <span data-value="hostCpuPct"></span>
+      </div>
+      <div class="badge">
+        <span class="str">MEM</span>
+        <span data-value="hostMemoryPct"></span>
+      </div>
+      <div class="badge">
+        <span class="str">Agent</span>
+        <span data-value="hostStatus"></span>
+      </div>
       <button class="btn1" data-fn="volumes" title="Show Volumes"><span class="icn">storage</span></button>
       <button class="btn1" data-fn="images" title="Show Images"><span class="icn">layers</span></button>
     </div>
   </header>
-  {% include 'hostStats.html' %}
+  <!-- {% include 'hostStats.html' %} -->
   {% include 'containers.html' %}
 </div>

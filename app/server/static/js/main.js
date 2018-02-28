@@ -3,83 +3,75 @@ var socket = io.connect('http://' + document.domain + ':' + location.port);
 
 // Global functions
 function buildTable(container,data,columns,pageLimit){
-  function cellFormat(key,data){
-    //  Formats table data cells when they contain objects
-    // console.log(key,data);
-    // Is there valid obects
-    if (data.length > 0 || Object.keys(data).length > 0) {
-      switch (key) {
-        case 'Ports':
-          // Iterate over X number of ports
-          var returnData = {'value':'','tooltip':''}
-          $.each(data,function(i,v){
-            returnData.value += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
-            returnData.tooltip += v['IP']+':'+v['PublicPort']+':'+v['PrivatePort']+'/'+v['Type']
-          })
-          break;
-        case 'Names':
-        case 'RepoTags':
-          // Iterate over X number of names
-          var returnData = {'value':'','tooltip':''}
-          $.each(data,function(i,v){
-            returnData.value += v
-            returnData.tooltip += v
-          })
-          break;
-        case 'Labels':
-        case 'UsageData':
-          // Iterate over X number of names
-          returnData = ""
-          $.each(data,function(i,v){
-            returnData += i+":"+v+" "
-          })
-          break;
-        case 'Memory':
-          var returnData = {'value':'','tooltip':''}
-          returnData.value = '<div class="bar-wrap"><div class="bar" style="width: '+data['Pct']+'%"></div></div>'
-          returnData.tooltip = data['Usage']+"/"+data['Limit']+" MB ("+data['Pct']+'%)'
-          break;
-        default:
-          returnData = "NO MATCH"
-      }
-      return returnData
-    } else {
-      return "NA"
-    }
-  }
   var table = container.find('[data-table]');
   var currentPageBadge = container.find('[data-value="currentPage"]');
-  // Remove any placeholder classes
-  container.find('section').removeClass('placeholder');
+  // Clear table out
   table.empty();
   // Build headers
-  var columnCount = 0;
-  $.each(data[0],function(i,v){
-    if ($.inArray(i,columns) > -1) {
-      var cell = '<div class="cell-head" data-column="'+i+'">'+i+'</div>'
-      columnCount += 1;
-      table.append(cell)
-    }
+  $.each(columns,function(i,v){
+    var cell = '<div class="cell-head" data-column="'+v+'">'+v+'</div>'
+    table.append(cell)
   })
-  table.css('grid-template-columns','repeat('+columnCount+',1fr)')
+  // Define grid columns
+  table.css('grid-template-columns','repeat('+columns.length+',1fr)')
   // Build rows
   var pageCount = 1
   var rowCount = 1
-  // Iterarte over top level data objects
+  // Iterarte over array objects
   $.each(data,function(i,v){
-    // Iterarte over the inner objects
-    $.each(v,function(i,v){
-      // Make sure the object is in the columns list
-      if ($.inArray(i,columns) > -1) {
-        // Check whether the objet is an array that needs more iteration
-        if ($.type(v) == "array" || $.type(v) == "object" ) {
-          var cellFormatted = cellFormat(i,v);
-          var cell = '<div class="cell" data-page="'+pageCount+'" data-row="'+rowCount+'" data-column="'+i+'" title="'+cellFormatted['tooltip']+'">'+cellFormatted['value']+'</div>'
-        } else {
-          var cell = '<div class="cell" data-page="'+pageCount+'" data-row="'+rowCount+'" data-column="'+i+'" title="'+v+'">'+v+'</div>'
+    // Create the cell elements first in order of columns
+    $.each(columns,function(i,column){
+      var cell = '<div class="cell" data-page="'+pageCount+'" data-row="'+rowCount+'" data-column="'+column+'"></div>'
+      table.append(cell)
+    })
+    // Iterarte over object attributes
+    $.each(v,function(key,value){
+      // Check whether the objet is an array or object that needs more iteration
+      if ($.type(value) == "array" || $.type(value) == "object" ) {
+        // Inject values into columns
+        switch (key) {
+          case 'Stats':
+            // Calculate CPU Usage Pct
+            var preCpuTotal = value['precpu_stats']['cpu_usage']['total_usage']
+            var preCpuSystem = value['precpu_stats']['system_cpu_usage']
+            var curCpuTotal = value['cpu_stats']['cpu_usage']['total_usage']
+            var curCpuSystem = value['cpu_stats']['system_cpu_usage']
+            var cpuTotalDelta = curCpuTotal - preCpuTotal
+            var cpuSystemDelta = curCpuSystem - preCpuSystem
+            var cpuPct = parseInt((cpuTotalDelta / cpuSystemDelta) * 100)
+            var html = '<div class="bar-wrap"><div class="bar" style="width: '+cpuPct+'%"></div></div>'
+            table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="CPU"]').html(html).attr('title',cpuPct+'%')
+            // Calculate Memory Usage Pct
+            var memoryPct = parseInt((value['memory_stats']['usage'] / value['memory_stats']['limit']) * 100);
+            var memoryUsageMb = parseInt( ((value['memory_stats']['usage']) / 1024) / 1024 )
+            var memoryLimitMb = parseInt( ((value['memory_stats']['limit']) / 1024) / 1024 )
+            var html = '<div class="bar-wrap"><div class="bar" style="width: '+memoryPct+'%"></div></div>'
+            var tooltip = memoryPct+'% ('+ memoryUsageMb +'/'+ memoryLimitMb + 'MB)'
+            table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Memory"]').html(html).attr('title',tooltip);
+            // Network stats
+            var networkTotalBytes = 0
+            $.each(value['networks'],function(key,value){
+              networkTotalBytes += value['rx_bytes']
+            })
+            table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Network"]').text(networkTotalBytes).attr('title',networkTotalBytes+' bytes');
+            break;
+          case 'Names':
+            var names = ""
+            $.each(value,function(key,value){ names += value })
+            table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Names"]').text(names).attr('title',names);
+            break;
+          case 'Ports':
+            // Iterate over X number of ports
+            var ports = ""
+            $.each(value,function(key,value){
+              ports += this['IP']+':'+this['PublicPort']+':'+this['PrivatePort']+'/'+this['Type']
+            })
+            table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Ports"]').text(ports).attr('title',ports);
+            break;
         }
-        // Append the created cell to the table DOM
-        table.append(cell)
+      } else {
+        // Inject value into columns
+        table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="'+key+'"]').text(value).attr('title',value);
       }
     })
     // Increment page numbers
@@ -440,15 +432,44 @@ var host = {
       var badge = thisHost.find('[data-value="hostStatus"]');
       if (status == 'healthy') {
         thisHost.attr('data-status','healthy')
-        badge.parent().removeClass('cRed').addClass('cGreen').attr('title','Agent Healthy').children('span').text('done');
+        badge.removeClass('cRed').addClass('cGreen').parent().attr('title','Healthy');
+        // Request host stats
+        host.cpu.request(thisHost);
+        host.memory.request(thisHost)
         // Populate modules
-        mod.hostStats.request(thisHost);
+        // mod.hostStats.request(thisHost);
         if (thisHost.find('[data-mod="containers"]').attr('data-paused') == 'false') {mod.containers.request(thisHost)}
       } else {
         thisHost.attr('data-status','unhealthy')
-        badge.parent().removeClass('cGreen').addClass('cRed').attr('title','Agent Unhealthy').children('span').text('clear');
+        badge.removeClass('cGreen').addClass('cRed').parent().attr('title','Unhealthy');
         host.unload(thisHost)
       }
+    },
+  },
+  cpu : {
+    request : function(thisHost){
+      serverRequest({'request': 'hostCpu', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
+    },
+    response : function(thisHost,responseData){
+      var pct = responseData['cpuPct']
+      var badge = thisHost.find('[data-value="hostCpuPct"]');
+      var status;
+      if (pct <= 50) {badge.removeClass('cRed cYellow').addClass('cGreen').parent().attr('title',pct+'%')}
+      if (pct > 50 && pct <= 75) {badge.removeClass('cRed cGreen').addClass('cYellow').parent().attr('title',pct+'%')}
+      if (pct > 75) {badge.removeClass('cYellow cGreen').addClass('cRed').parent().attr('title',pct+'%')}
+    },
+  },
+  memory : {
+    request : function(thisHost){
+      serverRequest({'request': 'hostMemory', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
+    },
+    response : function(thisHost,responseData){
+      var pct = responseData['memoryPct']
+      var badge = thisHost.find('[data-value="hostMemoryPct"]');
+      var status;
+      if (pct <= 50) {badge.removeClass('cRed cYellow').addClass('cGreen').parent().attr('title',pct+'%')}
+      if (pct > 50 && pct <= 75) {badge.removeClass('cRed cGreen').addClass('cYellow').parent().attr('title',pct+'%')}
+      if (pct > 75) {badge.removeClass('cYellow cGreen').addClass('cRed').parent().attr('title',pct+'%')}
     },
   },
   load : function(thisHost){
@@ -469,39 +490,43 @@ var host = {
   },
   unload : function(thisHost){
     // Unload modules
-    mod.hostStats.unload(thisHost);
     mod.containers.unload(thisHost);
     // Disable buttons except collapse
     thisHost.find('.header-controls button').prop('disabled',true);
-    thisHost.find('.header-controls button[data-fn="toggleCollapse"]').prop('disabled',false);
-
+    // thisHost.find('.header-controls button[data-fn="toggleCollapse"]').prop('disabled',false);
+    // Clear host stats
+    thisHost.find('[data-value="hostCpuPct"]').removeClass('cGreen cRed cYellow');
+    thisHost.find('[data-value="hostMemoryPct"]').removeClass('cGreen cRed cYellow');
+    // Collapse modules
+    thisHost.find('[data-mod]').attr('data-collapsed','true');
+    thisHost.find('[data-fn="toggleCollapse"]').text('expand_more');
   },
 }
 var mod = {
-  hostStats: {
-    unload : function(thisHost){
-      var thisMod = thisHost.find('[data-mod="hostStats"]');
-      thisMod.find('.progress-bar').css('width','0%');
-      thisMod.find('.stat-detail .value').text('0%');
-    },
-    request : function(thisHost){
-      serverRequest({'request': 'hostStats', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
-    },
-    response : function(thisHost,responseData){
-      // Populate stats
-      var thisMod = thisHost.find('[data-mod="hostStats"]')
-      $.each(responseData['stats'],function(key,value){
-        var submod = thisMod.find('[data-stat="'+key+'"]');
-        var bar = submod.find('.progress-bar');
-        var detail = submod.find('.stat-detail .value');
-        bar.css('width',value+'%');
-        detail.text(value+'%')
-        if ( value <= 60 ) { bar.removeClass('mid high').addClass('low') }
-        if ( value > 60 && value <= 75 ) { bar.removeClass('low high').addClass('mid') }
-        if ( value > 75 ) { bar.removeClass('low mid').addClass('high') }
-      })
-    },
-  },
+  // hostStats: {
+  //   unload : function(thisHost){
+  //     var thisMod = thisHost.find('[data-mod="hostStats"]');
+  //     thisMod.find('.progress-bar').css('width','0%');
+  //     thisMod.find('.stat-detail .value').text('0%');
+  //   },
+  //   request : function(thisHost){
+  //     serverRequest({'request': 'hostStats', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
+  //   },
+  //   response : function(thisHost,responseData){
+  //     // Populate stats
+  //     var thisMod = thisHost.find('[data-mod="hostStats"]')
+  //     $.each(responseData['stats'],function(key,value){
+  //       var submod = thisMod.find('[data-stat="'+key+'"]');
+  //       var bar = submod.find('.progress-bar');
+  //       var detail = submod.find('.stat-detail .value');
+  //       bar.css('width',value+'%');
+  //       detail.text(value+'%')
+  //       if ( value <= 60 ) { bar.removeClass('mid high').addClass('low') }
+  //       if ( value > 60 && value <= 75 ) { bar.removeClass('low high').addClass('mid') }
+  //       if ( value > 75 ) { bar.removeClass('low mid').addClass('high') }
+  //     })
+  //   },
+  // },
   containers : {
     request: function(thisHost) {
       serverRequest({'request': 'containers', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')});
@@ -512,11 +537,12 @@ var mod = {
       var thisSection = thisMod.find('section');
       var thisTable = thisSection.find('[data-table]');
       // Enable the pause button if previously disabled
-      thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
+      // thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
+      thisHost.find('.header-controls button').prop('disabled',false);
       // Disable container buttons
       thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
       // Populate table with data
-      var columns = ['Id','Names','Command','Created','Image','Names','Ports','State','Status','Memory'];
+      var columns = ['Names','Id','Command','Image','Ports','State','Status','Network','CPU','Memory'];
       buildTable(thisMod,responseData['data'],columns,10)
       // Get counts
       countTotal = responseData['data'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
@@ -528,12 +554,26 @@ var mod = {
         if (v['Status'].indexOf('(unhealthy)') >= 0) {countUnhealthy += 1};
       })
       // Update totals badge
-      thisMod.find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
-      thisMod.find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
-      thisMod.find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
-      thisMod.find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
-      thisMod.find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
-      thisMod.find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
+      function updateBadge(value,count){
+        var el = thisMod.find('.header-controls [data-value="'+value+'"]')
+        el.parent().attr('title',value)
+        el.text(count);
+        // White out if zero
+        if (count > 0) {el.addClass(value)} else {el.removeClass(value)}
+      }
+
+      updateBadge('total',countTotal)
+      updateBadge('running',countRunning)
+      updateBadge('exited',countExited)
+      // updateBadge('starting',countStarting)
+      updateBadge('healthy',countHealthy)
+      updateBadge('unhealthy',countUnhealthy)
+      // thisMod.find('.header-controls [data-value="total"]').attr('title','Total').text('T:'+countTotal);
+      // thisMod.find('.header-controls [data-value="running"]').attr('title','Running').text('R:'+countRunning).addClass('running');
+      // thisMod.find('.header-controls [data-value="exited"]').attr('title','Exited').text('E:'+countExited).addClass('exited');
+      // thisMod.find('.header-controls [data-value="starting"]').attr('title','Starting').text('S:'+countStarting).addClass('starting');
+      // thisMod.find('.header-controls [data-value="healthy"]').attr('title','Healthy').text('H:'+countHealthy).addClass('healthy');
+      // thisMod.find('.header-controls [data-value="unhealthy"]').attr('title','Unhealthy').text('U:'+countUnhealthy).addClass('unhealthy');
       // Style the table
       thisTable.find('.cell[data-column="State"]').each(function(){
         if ($(this).text().indexOf('exited') >= 0) {$(this).addClass('exited')}
@@ -857,6 +897,12 @@ socket.on('serverResponse', function(reponseData) {
       case 'hostStats':
         // mod.hostStats.populate(hostEl,reponseData)
         mod.hostStats.response(hostEl,reponseData)
+        break;
+      case 'hostCpu':
+        host.cpu.response(hostEl,reponseData)
+        break;
+      case 'hostMemory':
+        host.memory.response(hostEl,reponseData)
         break;
       case 'volumes':
         modal.volumes.populate(reponseData)

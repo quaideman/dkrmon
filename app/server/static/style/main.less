@@ -220,9 +220,6 @@ footer {
   }
 }
 .host {
-  // > header, .mod > header {
-  //   grid-area: header;
-  // }
   > header {
     margin-bottom: @padding /2;
     .header-title {
@@ -230,9 +227,27 @@ footer {
       font-size: 16px;
     }
     .header-controls {
+      .badge {
+        background-color: lighten(@c1,0%);
+        padding: 0 8px;
+        .str {
+          color: lighten(@c1,25%);
+          font-size: 11px;
+        }
+        [data-value] {
+          padding: 0;
+          height: 10px;
+          width: 10px;
+          border-radius: 100%;
+          transition: all 1s;
+          background-color: lighten(@c1,15%);
+          &.cGreen {background-color: @cGreen2}
+          &.cYellow {background-color: @cYellow}
+          &.cRed {background-color: @cRed2}
+        }
+      }
       button {
         .icn {font-size: 16px;}
-
       }
     }
   }
@@ -240,9 +255,6 @@ footer {
   border: 1px solid lighten(@c1,10%);
   padding: @padding / 2;
   background-color: lighten(@c1,5%);
-  // display: grid;
-  // grid-gap: @padding;
-  // grid-template-columns: 1fr 1fr 1fr 1fr;
   margin-bottom: @padding;
   &:last-of-type {
     margin-bottom: 0
@@ -308,9 +320,20 @@ footer {
     header {
       .header-controls {
         .badge {
-          [data-value="running"],[data-value="healthy"] {color: @cGreen2;}
-          [data-value="starting"],[data-value="exited"] {color: @cYellow;}
-          [data-value="unhealthy"] {color: @cRed2;}
+          background-color: lighten(@c1, 10%);
+          .str[data-value] {
+            font-wieght: bold;
+            &.healthy,&.running {color: @cGreen2;}
+            &.starting,&.exited {color: @cYellow;}
+            &.unhealthy {color: @cRed2;}
+          }
+          .str:nth-child(1) {
+            color: lighten(@c1,30%);
+            padding-right: 0;
+          }
+          // [data-value="running"],[data-value="healthy"] {color: @cGreen2;}
+          // [data-value="starting"],[data-value="exited"] {color: @cYellow;}
+          // [data-value="unhealthy"] {color: @cRed2;}
         }
       }
     }
@@ -464,12 +487,14 @@ button {
 .badge {
   display: flex;
   align-items: center;
+  justify-content: center;
   cursor: default;
   background-color: lighten(@c1,5%);
   height: 24px;
   color: white;
   border-radius: 24px;
   padding: 0 8px;
+  transition: all 1s;
   .str {
     text-transform: uppercase;
     font-weight: 600;
@@ -494,19 +519,22 @@ button {
   }
   &.cRed {
     background-color: @cRed;
-    color: lighten(@cRed,60%);
+    border-color: @cRed !important;
+    color: lighten(@cRed,60%) !important;
   }
   &.cBlue {
     background-color: @cBlue;
-    color: lighten(@cBlue,60%);
+    color: lighten(@cBlue,60%) !important;
   }
   &.cGreen {
     background-color: @cGreen;
-    color: lighten(@cGreen,60%);
+    border-color: @cGreen !important;
+    color: lighten(@cGreen,60%) !important;
   }
   &.cYellow {
     background-color: @cYellow;
-    color: darken(@cYellow,30%);
+    border-color: @cYellow !important;
+    color: darken(@cYellow,30%) !important;
   }
   > span {
     padding: 0 @padding / 4;
@@ -558,16 +586,25 @@ button {
   display: none;
   background-color: rgba(0, 0, 0, 0.7);
   transition: background-color 0.5s;
+  @keyframes modalContainerShow {
+    0%   {opacity: 0}
+    100% {opacity: 1}
+  }
   &[data-active="true"] {
     display: flex;
     align-items: center;
     justify-content: center;
+    animation: modalContainerShow 0.1s linear;
   }
   .modal {
     position: relative;
     width: 600px;
     > * {padding: @padding / 2;}
     background-color: lighten(@c1,5%);
+    @keyframes modalShow {
+      0%   {opacity: 0; bottom: 100px;}
+      100% {opacity: 1; bottom: 0px;}
+    }
     &[data-modal="containerLog"],&[data-modal="containerInspect"] {
       width: 90%;
       section {
@@ -585,6 +622,7 @@ button {
       display: none;
     }
     &[data-active="true"] {
+      animation: modalShow 0.1s ease;
       display: block;
     }
     header, footer {
@@ -628,7 +666,7 @@ button {
   }
 }
 
-// waiting Spinner
+// Waiting Spinner
 @keyframes spinner { to {transform: rotate(360deg);} }
 #spinner-wrap {
   display: none;
@@ -687,24 +725,23 @@ button {
       background-color: lighten(@c1,25%);
       color: white;
     }
-    &[data-column="Memory"] {
-      .bar-wrap {
-        background-color: lighten(@c1, 5%);
-        width: 100%;
-        height: 8px;
-        display: flex;
-        align-items: center;
-        padding: 3px;
-        border-radius: 10px;
-        overflow: hidden;
-        .bar {
-          width: 0%;
-          transition: width 1s;
-          background-color: lighten(@c1, 30%);
-          height: 6px;
-          border-radius: 6px;
-        }
+    .bar-wrap {
+      background-color: lighten(@c1, 5%);
+      width: 100%;
+      height: 8px;
+      display: flex;
+      align-items: center;
+      padding: 3px;
+      border-radius: 10px;
+      overflow: hidden;
+      .bar {
+        width: 0%;
+        transition: width 1s;
+        background-color: lighten(@c1, 30%);
+        height: 6px;
+        border-radius: 6px;
       }
     }
+
   }
 }
