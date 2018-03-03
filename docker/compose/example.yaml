@@ -63,6 +63,69 @@ services:
       timeout: 10s
       retries: 3
 
+  nginx06:
+    image: "nginx:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    healthcheck:
+      test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx07:
+    image: "nginx:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx08:
+    image: "nginx:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx09:
+    image: "nginx:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    cpus: 0.5
+    healthcheck:
+      test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  nginx10:
+    image: "nginx:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    healthcheck:
+      test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   httpd01:
     image: "httpd:alpine"
     ports:
@@ -112,6 +175,66 @@ services:
       retries: 3
 
   httpd05:
+    image: "httpd:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    healthcheck:
+      test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  httpd06:
+    image: "httpd:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    healthcheck:
+      test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  httpd07:
+    image: "httpd:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    healthcheck:
+      test: ["CMD","stat","/etc/passwd","||","exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+
+  httpd08:
+    image: "httpd:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    healthcheck:
+      test: ["CMD-SHELL", "stat /etc/passwd || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  httpd09:
+    image: "httpd:alpine"
+    ports:
+      - "80"
+    mem_limit: 10m
+    mem_reservation: 5m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+
+  httpd10:
     image: "httpd:alpine"
     ports:
       - "80"

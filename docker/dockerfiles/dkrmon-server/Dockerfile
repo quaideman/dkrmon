@@ -5,7 +5,7 @@ RUN apk update && apk upgrade \
 		&& apk add gcc musl-dev \
 		&& mkdir -p $DKRMON_PATH/app $DKRMON_PATH/logs
 
-##COPY server/ $DKRMON_PATH/app
+COPY server/ $DKRMON_PATH/app
 RUN pip3 install flask flask-socketio eventlet
 ENV FLASK_APP=server.py
 WORKDIR $DKRMON_PATH/app

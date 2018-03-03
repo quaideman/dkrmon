@@ -1,0 +1,23 @@
+<div class="dashboard" data-dashboard="{{ dashboard }}">
+  <header data-header="dashboard">
+    <div class="header-title">{{ dashboard }}</div>
+    <div class="header-controls">
+      <button class="btn1" data-fn="dashboardSelect" title="Change Dashboard"><span class="icn md-18">dashboard</span></button>
+      <button class="btn1" data-fn="dashboardExpand" title="Expand Dashboard"><span class="icn md-24">expand_more</span></button>
+      <button class="btn1" data-fn="dashboardCollapse" title="Collapse Dashboard"><span class="icn md-24">expand_less</span></button>
+    </div>
+  </header>
+  <div class="dashboard-selector-wrap">
+    <div class="dashboard-filter">
+      <input data-fn="filterDashboards" name="filter" placeholder="Filter"></input>
+    </div>
+    <div class="dashboard-list">
+      {% for dashboard in dashboards %}
+        <div class="item">{{ dashboard['name'] }}</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% for host in hosts %}
+    {% include 'host.html' %}
+  {% endfor %}
+</div>

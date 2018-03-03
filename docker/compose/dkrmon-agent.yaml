@@ -9,6 +9,5 @@ services:
       - /media/sf_agent/agent.py:/dkrmon/app/agent.py:ro
       - /var/run/docker.sock:/dkrmon/app/docker.sock:ro
       - /sys/fs/cgroup/memory/docker/:/dkrmon/stats/memory/:ro
-      - /var/lib/docker/:/var/lib/docker/:ro
     mem_limit: 128m
     tty: true

@@ -608,74 +608,71 @@ var mod = {
       thisMod.find('[data-fn="previousPage"],[data-fn="nextPage"]').prop('disabled',false);
     },
     response: function(thisHost,responseData) {
-      if ( responseData['containers'] ) {
-        var thisDashboard = $('.dashboard').attr('data-dashboard');
-        var thisMod = thisHost.find('[data-mod="containers"]');
-        var thisSection = thisMod.find('section');
-        var thisTable = thisSection.find('[data-table]');
-        // Enable the pause button if previously disabled
-        // thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
-        thisHost.find('.header-controls button').prop('disabled',false);
-        // Disable container buttons
-        thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
-        // Populate table with data
-        var columns = ['Name','Id','Command','Image','Ports','State','Health','Memory'];
-        buildTable(thisMod,responseData['containers'],columns,10)
-        // Get counts
-        countTotal = responseData['containers'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
-        $.each(responseData['containers'],function(i,v){
-          if ( $.inArray('running', v['State']['Status'].split()) > -1 ) { countRunning += 1 }
-          // if (v['State']['Status'].indexOf('running') >= 0) {countRunning += 1};
-          if ( $.inArray('exited', v['State']['Status'].split()) > -1 ) { countExited += 1 }
-          if ( $.inArray('starting', v['State']['Status'].split()) > -1 ) { countStarting += 1 }
-          if (v['State']['Health']) {
-            if ( $.inArray('healthy', v['State']['Health']['Status'].split()) > -1 ) { countHealthy += 1 }
-            if ( $.inArray('unhealthy', v['State']['Health']['Status'].split()) > -1 ) { countUnhealthy += 1 }
-          }
-        })
-        // Update totals badge
-        function updateBadge(value,count){
-          var el = thisMod.find('.header-controls [data-value="'+value+'"]')
-          el.parent().attr('title',value)
-          el.text(count);
-          // White out if zero
-          if (count > 0) {el.addClass(value)} else {el.removeClass(value)}
+      var thisDashboard = $('.dashboard').attr('data-dashboard');
+      var thisMod = thisHost.find('[data-mod="containers"]');
+      var thisSection = thisMod.find('section');
+      var thisTable = thisSection.find('[data-table]');
+      // Enable the pause button if previously disabled
+      // thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
+      thisHost.find('.header-controls button').prop('disabled',false);
+      // Disable container buttons
+      thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
+      // Populate table with data
+      var columns = ['Name','Id','Command','Image','Ports','State','Health','Memory'];
+      buildTable(thisMod,responseData['containers'],columns,10)
+      // Get counts
+      countTotal = responseData['containers'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
+      $.each(responseData['containers'],function(i,v){
+        if ( $.inArray('running', v['State']['Status'].split()) > -1 ) { countRunning += 1 }
+        // if (v['State']['Status'].indexOf('running') >= 0) {countRunning += 1};
+        if ( $.inArray('exited', v['State']['Status'].split()) > -1 ) { countExited += 1 }
+        if ( $.inArray('starting', v['State']['Status'].split()) > -1 ) { countStarting += 1 }
+        if (v['State']['Health']) {
+          if ( $.inArray('healthy', v['State']['Health']['Status'].split()) > -1 ) { countHealthy += 1 }
+          if ( $.inArray('unhealthy', v['State']['Health']['Status'].split()) > -1 ) { countUnhealthy += 1 }
         }
-        updateBadge('total',countTotal)
-        updateBadge('running',countRunning)
-        updateBadge('exited',countExited)
-        updateBadge('healthy',countHealthy)
-        updateBadge('unhealthy',countUnhealthy)
-        // Style the table
-        thisTable.find('.cell[data-column="State"]').each(function(){
-          if ( $.inArray('exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
-          if ( $.inArray('running', $(this).text().split(" ")) > -1 ) { $(this).addClass('running') }
-        })
-        thisTable.find('.cell[data-column="Health"]').each(function(){
-          if ( $.inArray('healthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('healthy') }
-          if ( $.inArray('unhealthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('unhealthy') }
-          if ( $.inArray('Exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
-        })
-        // Apply any filters that may be applied
-        var tableFilter = thisTable.attr('data-filter');
-        if ( tableFilter ) { filterTable(tableFilter,thisTable) }
-        // Row select
-        thisTable.find('.cell').click(function(){
-          var row = $(this).attr('data-row');
-          var page = $(this).attr('data-page');
-          $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
-          var selectedCells = thisTable.children('.cell.selected[data-column="Id"]');
-          // If more than one container selected, disable log/inspect/top
-          if ( selectedCells.length > 1 ) {
-            thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
-          } else {
-            thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', false);
-          }
-        })
-        // Enable buttons
-        thisMod.find('[data-fn="previousPage"],[data-fn="nextPage"]').prop('disabled',false);
+      })
+      // Update totals badge
+      function updateBadge(value,count){
+        var el = thisMod.find('.header-controls [data-value="'+value+'"]')
+        el.parent().attr('title',value)
+        el.text(count);
+        // White out if zero
+        if (count > 0) {el.addClass(value)} else {el.removeClass(value)}
       }
-
+      updateBadge('total',countTotal)
+      updateBadge('running',countRunning)
+      updateBadge('exited',countExited)
+      updateBadge('healthy',countHealthy)
+      updateBadge('unhealthy',countUnhealthy)
+      // Style the table
+      thisTable.find('.cell[data-column="State"]').each(function(){
+        if ( $.inArray('exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
+        if ( $.inArray('running', $(this).text().split(" ")) > -1 ) { $(this).addClass('running') }
+      })
+      thisTable.find('.cell[data-column="Health"]').each(function(){
+        if ( $.inArray('healthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('healthy') }
+        if ( $.inArray('unhealthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('unhealthy') }
+        if ( $.inArray('Exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
+      })
+      // Apply any filters that may be applied
+      var tableFilter = thisTable.attr('data-filter');
+      if ( tableFilter ) { filterTable(tableFilter,thisTable) }
+      // Row select
+      thisTable.find('.cell').click(function(){
+        var row = $(this).attr('data-row');
+        var page = $(this).attr('data-page');
+        $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
+        var selectedCells = thisTable.children('.cell.selected[data-column="Id"]');
+        // If more than one container selected, disable log/inspect/top
+        if ( selectedCells.length > 1 ) {
+          thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
+        } else {
+          thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', false);
+        }
+      })
+      // Enable buttons
+      thisMod.find('[data-fn="previousPage"],[data-fn="nextPage"]').prop('disabled',false);
     },
     load: function(thisHost) {
       // Load each containers module
@@ -701,17 +698,9 @@ var mod = {
         selectedCells.each(function(){
           selectedContainers.push($(this).text());
         })
-        if (thisFn == 'containerStop' || thisFn == 'containerStart' || thisFn == 'containerRestart' ) {
+        if (thisFn == 'containerStop' || thisFn == 'containerStart' || thisFn == 'containerRestart' || thisFn == 'containerRemove' ) {
           thisMod.attr('data-paused','false')
           serverRequest({'request': thisFn, 'dashboard': thisDashboard, 'host': thisHost.attr('data-host'), 'containers': selectedContainers});
-        }
-        if (thisFn == 'containerRemove') {
-          var modalEl = $('[data-modal="confirm"]');
-          $.each(selectedContainers,function(i,v){
-            modalEl.find('section .values').append('<p>'+v+'</p>');
-          })
-
-          modal.display(modalEl)
         }
         if (thisFn == 'containerLog') {
           var modalEl = $('[data-modal="containerLog"]')
