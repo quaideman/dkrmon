@@ -1,8 +1,7 @@
 ## Imports
 from flask import Flask, render_template, request
-# from threading import Lock
 from flask_socketio import SocketIO, send, emit
-import socket,time,json,struct,os,sys,datetime,re,logging
+import socket,time,json,struct,os,sys,datetime,re,logging,threading
 from operator import itemgetter
 
 ## Setup
@@ -52,8 +51,17 @@ def getHost(dashboardName,hostName):
             if host['name'] == hostName: return host
     else:
         return False
+
+# def threadRequest(request):
+#     response = []
+#     thread = threading.Thread(target=hostRequest, args=(response,request,))
+#     thread.start()
+#     thread.join()
+#     return response[0]
+
 def hostRequest(request):
     ''' Make requests against specified hosts '''
+    log(('DEBUG','GOT REQUEST FROM THREAD:',request))
     def socketSnd(sock, msg):
         ''' Prefix each message with a 4-byte length (network byte order) '''
         msg = struct.pack('>I', len(msg)) + msg
@@ -99,14 +107,17 @@ def hostRequest(request):
     host = getHost(request['dashboard'],request['host'])
     if host:
         return makeRequest(request,host)
+        # response.append(makeRequest(request,host))
     else:
         return {'action':'hostRequest','result':'error','message': 'No hosts'}
+        # response.append({'action':'hostRequest','result':'error','message': 'No hosts'})
 
 ## Socket Requests
 @socketio.on('serverRequest')
 def serverRequest(request):
     ''' Client requests against this server '''
     returnData = hostRequest(request)
+    # returnData = threadRequest(request)
     emit('serverResponse', returnData)
 
 ## Flask

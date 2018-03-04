@@ -5,7 +5,6 @@ var socket = io.connect('http://' + document.domain + ':' + location.port);
 function buildTable(container,data,columns,pageLimit){
   var table = container.find('[data-table]');
   var currentPageBadge = container.find('[data-value="currentPage"]');
-
   function containers(container){
     // Name
     table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Name"] span').text(container['Name']).attr('title',container['Name']);
@@ -21,18 +20,22 @@ function buildTable(container,data,columns,pageLimit){
     table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Image"] span').text(container['Config']['Image']).attr('title',container['Config']['Image']);
     // Ports
     var ports = "";
-    $.each(container['NetworkSettings']['Ports'],function(key,val){
-      // Interate over each port
-      var containerPort = key
-      var hostIp = ""
-      var hostPort = ""
-      // Interate over each port attr
-      $.each(val,function(key,val){
-        hostIp = val['HostIp']
-        hostPort = val['HostPort']
+    if (container['State']['Status'] == 'running') {
+      $.each(container['NetworkSettings']['Ports'],function(key,val){
+        // Interate over each port
+        var containerPort = key
+        var hostIp = ""
+        var hostPort = ""
+        // Interate over each port attr
+        $.each(val,function(key,val){
+          hostIp = val['HostIp']
+          hostPort = val['HostPort']
+        })
+        ports += hostIp + ':' + hostPort + ':' + containerPort
       })
-      ports += hostIp + ':' + hostPort + ':' + containerPort
-    })
+    } else {
+      ports = "NA"
+    }
     table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Ports"] span').text(ports).attr('title',ports);
     // State
     table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="State"] span').text(container['State']['Status']).attr('title',container['State']['Status']);
@@ -45,11 +48,26 @@ function buildTable(container,data,columns,pageLimit){
     // Memory
     if (container['Memory']) {
       var pct = container['Memory']['Pct'];
+      var usage = parseInt(container['Memory']['Usage'])
+      var limit = container['Memory']['Limit']
       var html = '<div class="bar-wrap"><div class="bar" style="width: '+pct+'%"></div></div>';
-      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Memory"]').html(html).attr('title',pct);
+      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Memory"]').html(html).attr('title',pct +'% (' + usage + '/' + limit + 'MB)');
+    } else {
+      var html = '<div class="bar-wrap"><div class="bar" style="width: 0%"></div></div>';
+      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Memory"]').html(html).attr('title','NA');
+    }
+    // Started
+    if (container['State']['Status'] == 'running') {
+      var startedAtIso = container['State']['StartedAt']
+      var startedAtSec = Date.parse(startedAtIso) / 1000
+      var now = Date.now() / 1000
+      var delta = now - startedAtSec
+      var uptime = moment().subtract(delta, 'seconds').fromNow()
+      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Started"] span').text(uptime).attr('title',uptime);
+    } else {
+      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Started"] span').text('NA').attr('title','NA');
     }
   }
-
   // Clear table out
   table.empty();
   // Build headers
@@ -62,7 +80,6 @@ function buildTable(container,data,columns,pageLimit){
   // Build rows
   var pageCount = 1
   var rowCount = 1
-
   // Iterarte over array objects
   $.each(data,function(i,v){
     // Create the cell elements first in order of columns
@@ -86,7 +103,6 @@ function buildTable(container,data,columns,pageLimit){
     var page = $(this).attr('data-page');
     $(this).toggleClass('hovered').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('hovered');
   })
-
   // Pagination
   container.find('[data-fn="nextPage"]').off().click(function(){
     var currentPage = parseInt(table.attr('data-page'))
@@ -154,8 +170,8 @@ function buildTable(container,data,columns,pageLimit){
     filterTable(tableFilter,container)
   }
 }
-function filterTable(query,container){
-    var table = container.find('[data-table]');
+function filterTable(query,element,fuzzy){
+    var table = element.find('[data-table]');
     currentPage = table.attr('data-page');
     table.attr('data-filterPage',1)
     // Apply Filtering
@@ -171,10 +187,18 @@ function filterTable(query,container){
       var page = 1
       var count = 1
       table.find('.cell').each(function(){
-        if ( $.inArray($(this).text(), query.split(" ")) > -1 ) {
-          // Append row to rows
-          if ($.inArray($(this).attr('data-row'),rows) == -1 ) {
-            rows.push($(this).attr('data-row'));
+        if (fuzzy) {
+          if ($(this).text().indexOf(query) >= 0) {
+            if ($.inArray($(this).attr('data-row'),rows) == -1 ) {
+              rows.push($(this).attr('data-row'));
+            }
+          }
+        } else {
+          if ( $.inArray($(this).text(), query.split(" ")) > -1 ) {
+            // Append row to rows
+            if ($.inArray($(this).attr('data-row'),rows) == -1 ) {
+              rows.push($(this).attr('data-row'));
+            }
           }
         }
       })
@@ -198,7 +222,7 @@ function filterTable(query,container){
       if ( rows.length > 0 ) {
         table.find('.cell').each(function(){
           if ( $.inArray( $(this).attr('data-row'), rows) > -1 && $(this).attr('data-filterPage') == 1 ) {
-            container.find('[data-value="currentPage"]').text(1)
+            element.find('[data-value="currentPage"]').text(1)
             $(this).css('display','flex');
           } else {
             $(this).hide()
@@ -210,7 +234,7 @@ function filterTable(query,container){
       table.find('.cell').removeAttr('data-filterPage');
       table.find('.cell[data-page]').hide();
       table.find('.cell[data-page="'+currentPage+'"]').each(function(){
-        container.find('[data-value="currentPage"]').text(currentPage)
+        element.find('[data-value="currentPage"]').text(currentPage)
         // $(this).show();
         $(this).css('display','flex');
       })
@@ -507,30 +531,6 @@ var host = {
   },
 }
 var mod = {
-  // hostStats: {
-  //   unload : function(thisHost){
-  //     var thisMod = thisHost.find('[data-mod="hostStats"]');
-  //     thisMod.find('.progress-bar').css('width','0%');
-  //     thisMod.find('.stat-detail .value').text('0%');
-  //   },
-  //   request : function(thisHost){
-  //     serverRequest({'request': 'hostStats', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
-  //   },
-  //   response : function(thisHost,responseData){
-  //     // Populate stats
-  //     var thisMod = thisHost.find('[data-mod="hostStats"]')
-  //     $.each(responseData['stats'],function(key,value){
-  //       var submod = thisMod.find('[data-stat="'+key+'"]');
-  //       var bar = submod.find('.progress-bar');
-  //       var detail = submod.find('.stat-detail .value');
-  //       bar.css('width',value+'%');
-  //       detail.text(value+'%')
-  //       if ( value <= 60 ) { bar.removeClass('mid high').addClass('low') }
-  //       if ( value > 60 && value <= 75 ) { bar.removeClass('low high').addClass('mid') }
-  //       if ( value > 75 ) { bar.removeClass('low mid').addClass('high') }
-  //     })
-  //   },
-  // },
   containers : {
     request: function(thisHost) {
       serverRequest({'request': 'containers', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')});
@@ -608,71 +608,76 @@ var mod = {
       thisMod.find('[data-fn="previousPage"],[data-fn="nextPage"]').prop('disabled',false);
     },
     response: function(thisHost,responseData) {
-      var thisDashboard = $('.dashboard').attr('data-dashboard');
-      var thisMod = thisHost.find('[data-mod="containers"]');
-      var thisSection = thisMod.find('section');
-      var thisTable = thisSection.find('[data-table]');
-      // Enable the pause button if previously disabled
-      // thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
-      thisHost.find('.header-controls button').prop('disabled',false);
-      // Disable container buttons
-      thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
-      // Populate table with data
-      var columns = ['Name','Id','Command','Image','Ports','State','Health','Memory'];
-      buildTable(thisMod,responseData['containers'],columns,10)
-      // Get counts
-      countTotal = responseData['containers'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
-      $.each(responseData['containers'],function(i,v){
-        if ( $.inArray('running', v['State']['Status'].split()) > -1 ) { countRunning += 1 }
-        // if (v['State']['Status'].indexOf('running') >= 0) {countRunning += 1};
-        if ( $.inArray('exited', v['State']['Status'].split()) > -1 ) { countExited += 1 }
-        if ( $.inArray('starting', v['State']['Status'].split()) > -1 ) { countStarting += 1 }
-        if (v['State']['Health']) {
-          if ( $.inArray('healthy', v['State']['Health']['Status'].split()) > -1 ) { countHealthy += 1 }
-          if ( $.inArray('unhealthy', v['State']['Health']['Status'].split()) > -1 ) { countUnhealthy += 1 }
+      if ( responseData['containers'] ) {
+        var thisDashboard = $('.dashboard').attr('data-dashboard');
+        var thisMod = thisHost.find('[data-mod="containers"]');
+        var thisSection = thisMod.find('section');
+        var thisTable = thisSection.find('[data-table]');
+        // Enable the pause button if previously disabled
+        // thisMod.find('[data-fn="togglePause"]').prop('disabled',false);
+        thisHost.find('.header-controls button').prop('disabled',false);
+        // Disable container buttons
+        thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
+        // Populate table with data
+        var columns = ['Name','Id','Command','Image','Ports','State','Health','Started','Memory'];
+        buildTable(thisMod,responseData['containers'],columns,10)
+        // Get counts
+        countTotal = responseData['containers'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
+        $.each(responseData['containers'],function(i,v){
+          if ( $.inArray('running', v['State']['Status'].split()) > -1 ) { countRunning += 1 }
+          // if (v['State']['Status'].indexOf('running') >= 0) {countRunning += 1};
+          if ( $.inArray('exited', v['State']['Status'].split()) > -1 ) { countExited += 1 }
+          if ( $.inArray('starting', v['State']['Status'].split()) > -1 ) { countStarting += 1 }
+          if (v['State']['Health']) {
+            if ( $.inArray('healthy', v['State']['Health']['Status'].split()) > -1 ) { countHealthy += 1 }
+            if ( $.inArray('unhealthy', v['State']['Health']['Status'].split()) > -1 ) { countUnhealthy += 1 }
+          }
+        })
+        // Update totals badge
+        function updateBadge(value,count){
+          var el = thisMod.find('.header-controls [data-value="'+value+'"]')
+          el.parent().attr('title',value)
+          el.text(count);
+          // White out if zero
+          if (count > 0) {el.addClass(value)} else {el.removeClass(value)}
         }
-      })
-      // Update totals badge
-      function updateBadge(value,count){
-        var el = thisMod.find('.header-controls [data-value="'+value+'"]')
-        el.parent().attr('title',value)
-        el.text(count);
-        // White out if zero
-        if (count > 0) {el.addClass(value)} else {el.removeClass(value)}
+        updateBadge('total',countTotal)
+        updateBadge('running',countRunning)
+        updateBadge('exited',countExited)
+        updateBadge('healthy',countHealthy)
+        updateBadge('unhealthy',countUnhealthy)
+        // Style the table
+        thisTable.find('.cell[data-column="State"]').each(function(){
+          if ( $.inArray('exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
+          if ( $.inArray('running', $(this).text().split(" ")) > -1 ) { $(this).addClass('running') }
+
+        })
+        thisTable.find('.cell[data-column="Health"]').each(function(){
+          if ( $.inArray('healthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('healthy') }
+          if ( $.inArray('unhealthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('unhealthy') }
+          if ( $.inArray('Exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
+          if ( $.inArray('starting', $(this).text().split(" ")) > -1 ) { $(this).addClass('starting') }
+        })
+        // Apply any filters that may be applied
+        var tableFilter = thisTable.attr('data-filter');
+        if ( tableFilter ) { filterTable(tableFilter,thisTable) }
+        // Row select
+        thisTable.find('.cell').click(function(){
+          var row = $(this).attr('data-row');
+          var page = $(this).attr('data-page');
+          $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
+          var selectedCells = thisTable.children('.cell.selected[data-column="Id"]');
+          // If more than one container selected, disable log/inspect/top
+          if ( selectedCells.length > 1 ) {
+            thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
+          } else {
+            thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', false);
+          }
+        })
+        // Enable buttons
+        thisMod.find('[data-fn="previousPage"],[data-fn="nextPage"]').prop('disabled',false);
       }
-      updateBadge('total',countTotal)
-      updateBadge('running',countRunning)
-      updateBadge('exited',countExited)
-      updateBadge('healthy',countHealthy)
-      updateBadge('unhealthy',countUnhealthy)
-      // Style the table
-      thisTable.find('.cell[data-column="State"]').each(function(){
-        if ( $.inArray('exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
-        if ( $.inArray('running', $(this).text().split(" ")) > -1 ) { $(this).addClass('running') }
-      })
-      thisTable.find('.cell[data-column="Health"]').each(function(){
-        if ( $.inArray('healthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('healthy') }
-        if ( $.inArray('unhealthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('unhealthy') }
-        if ( $.inArray('Exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
-      })
-      // Apply any filters that may be applied
-      var tableFilter = thisTable.attr('data-filter');
-      if ( tableFilter ) { filterTable(tableFilter,thisTable) }
-      // Row select
-      thisTable.find('.cell').click(function(){
-        var row = $(this).attr('data-row');
-        var page = $(this).attr('data-page');
-        $(this).toggleClass('selected').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('selected');
-        var selectedCells = thisTable.children('.cell.selected[data-column="Id"]');
-        // If more than one container selected, disable log/inspect/top
-        if ( selectedCells.length > 1 ) {
-          thisMod.find('[data-fn="containerTop"],[data-fn="containerLog"],[data-fn="containerInspect"]').prop('disabled', true);
-        } else {
-          thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', false);
-        }
-      })
-      // Enable buttons
-      thisMod.find('[data-fn="previousPage"],[data-fn="nextPage"]').prop('disabled',false);
+
     },
     load: function(thisHost) {
       // Load each containers module
@@ -686,7 +691,7 @@ var mod = {
         clearTimeout(filterDelay);
         filterDelay = setTimeout(function(){
           var query = thisEl.val();
-          filterTable(query,thisMod);
+          filterTable(query,thisMod,true);
         }, 300);
       })
       // Attach events to control buttons

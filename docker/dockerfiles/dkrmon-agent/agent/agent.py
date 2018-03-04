@@ -1,5 +1,5 @@
 ## Imports
-import socket,json,struct,docker,os,sys,datetime,threading
+import socket,json,struct,docker,os,sys,datetime
 
 ## Functions
 def log(tuple):
@@ -112,7 +112,6 @@ def myRequests(rcvPayload):
     #             container['Stats'] = stats(container['Id'])
     #
     #     return returnData[resource]
-
     def containerDetails():
         ''' Return all container details '''
         # def stats(containerId):
@@ -145,7 +144,6 @@ def myRequests(rcvPayload):
             data['Memory'] = containerStatMemory(data['Id'])
             returnData.append(data)
         return returnData
-
     def hostStatCpu():
         try:
             ## Get the load averages
@@ -218,7 +216,11 @@ def myRequests(rcvPayload):
     request = rcvPayload['request']
     try:
         if request == 'hostHealth':
-            rcvPayload['result'] = 'healthy'
+            status = dkrClient.ping()
+            if status:
+                rcvPayload['result'] = 'healthy'
+            else:
+                rcvPayload['result'] = 'unhealthy'
             return rcvPayload
         if request == 'containers':
             # rcvPayload['data'] = dkrDetails('Containers')
@@ -226,7 +228,7 @@ def myRequests(rcvPayload):
             rcvPayload['result'] = 'success'
             return rcvPayload
         if request == 'containerLog':
-            rcvPayload['log'] = dkrClient.containers.get(rcvPayload['container']).logs().decode("utf-8").split('\n')
+            rcvPayload['log'] = dkrClient.containers.get(rcvPayload['container']).logs(tail=200).decode("utf-8").split('\n')
             rcvPayload['result'] = 'success'
             return rcvPayload
         if request == 'containerStop' or request == 'containerStart' or request == 'containerRestart' or request == 'containerRemove':

@@ -1,5 +1,5 @@
 ## Imports
-import socket,json,struct,docker,os,sys,datetime,threading
+import socket,json,struct,docker,os,sys,datetime
 
 ## Functions
 def log(tuple):

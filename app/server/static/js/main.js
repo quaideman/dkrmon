@@ -5,7 +5,6 @@ var socket = io.connect('http://' + document.domain + ':' + location.port);
 function buildTable(container,data,columns,pageLimit){
   var table = container.find('[data-table]');
   var currentPageBadge = container.find('[data-value="currentPage"]');
-
   function containers(container){
     // Name
     table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Name"] span').text(container['Name']).attr('title',container['Name']);
@@ -21,18 +20,22 @@ function buildTable(container,data,columns,pageLimit){
     table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Image"] span').text(container['Config']['Image']).attr('title',container['Config']['Image']);
     // Ports
     var ports = "";
-    $.each(container['NetworkSettings']['Ports'],function(key,val){
-      // Interate over each port
-      var containerPort = key
-      var hostIp = ""
-      var hostPort = ""
-      // Interate over each port attr
-      $.each(val,function(key,val){
-        hostIp = val['HostIp']
-        hostPort = val['HostPort']
+    if (container['State']['Status'] == 'running') {
+      $.each(container['NetworkSettings']['Ports'],function(key,val){
+        // Interate over each port
+        var containerPort = key
+        var hostIp = ""
+        var hostPort = ""
+        // Interate over each port attr
+        $.each(val,function(key,val){
+          hostIp = val['HostIp']
+          hostPort = val['HostPort']
+        })
+        ports += hostIp + ':' + hostPort + ':' + containerPort
       })
-      ports += hostIp + ':' + hostPort + ':' + containerPort
-    })
+    } else {
+      ports = "NA"
+    }
     table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Ports"] span').text(ports).attr('title',ports);
     // State
     table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="State"] span').text(container['State']['Status']).attr('title',container['State']['Status']);
@@ -45,11 +48,26 @@ function buildTable(container,data,columns,pageLimit){
     // Memory
     if (container['Memory']) {
       var pct = container['Memory']['Pct'];
+      var usage = parseInt(container['Memory']['Usage'])
+      var limit = container['Memory']['Limit']
       var html = '<div class="bar-wrap"><div class="bar" style="width: '+pct+'%"></div></div>';
-      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Memory"]').html(html).attr('title',pct);
+      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Memory"]').html(html).attr('title',pct +'% (' + usage + '/' + limit + 'MB)');
+    } else {
+      var html = '<div class="bar-wrap"><div class="bar" style="width: 0%"></div></div>';
+      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Memory"]').html(html).attr('title','NA');
+    }
+    // Started
+    if (container['State']['Status'] == 'running') {
+      var startedAtIso = container['State']['StartedAt']
+      var startedAtSec = Date.parse(startedAtIso) / 1000
+      var now = Date.now() / 1000
+      var delta = now - startedAtSec
+      var uptime = moment().subtract(delta, 'seconds').fromNow()
+      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Started"] span').text(uptime).attr('title',uptime);
+    } else {
+      table.find('.cell[data-page="'+pageCount+'"][data-row="'+rowCount+'"][data-column="Started"] span').text('NA').attr('title','NA');
     }
   }
-
   // Clear table out
   table.empty();
   // Build headers
@@ -62,7 +80,6 @@ function buildTable(container,data,columns,pageLimit){
   // Build rows
   var pageCount = 1
   var rowCount = 1
-
   // Iterarte over array objects
   $.each(data,function(i,v){
     // Create the cell elements first in order of columns
@@ -86,7 +103,6 @@ function buildTable(container,data,columns,pageLimit){
     var page = $(this).attr('data-page');
     $(this).toggleClass('hovered').siblings('[data-row="'+row+'"][data-page="'+page+'"]').toggleClass('hovered');
   })
-
   // Pagination
   container.find('[data-fn="nextPage"]').off().click(function(){
     var currentPage = parseInt(table.attr('data-page'))
@@ -154,8 +170,8 @@ function buildTable(container,data,columns,pageLimit){
     filterTable(tableFilter,container)
   }
 }
-function filterTable(query,container){
-    var table = container.find('[data-table]');
+function filterTable(query,element,fuzzy){
+    var table = element.find('[data-table]');
     currentPage = table.attr('data-page');
     table.attr('data-filterPage',1)
     // Apply Filtering
@@ -171,10 +187,18 @@ function filterTable(query,container){
       var page = 1
       var count = 1
       table.find('.cell').each(function(){
-        if ( $.inArray($(this).text(), query.split(" ")) > -1 ) {
-          // Append row to rows
-          if ($.inArray($(this).attr('data-row'),rows) == -1 ) {
-            rows.push($(this).attr('data-row'));
+        if (fuzzy) {
+          if ($(this).text().indexOf(query) >= 0) {
+            if ($.inArray($(this).attr('data-row'),rows) == -1 ) {
+              rows.push($(this).attr('data-row'));
+            }
+          }
+        } else {
+          if ( $.inArray($(this).text(), query.split(" ")) > -1 ) {
+            // Append row to rows
+            if ($.inArray($(this).attr('data-row'),rows) == -1 ) {
+              rows.push($(this).attr('data-row'));
+            }
           }
         }
       })
@@ -198,7 +222,7 @@ function filterTable(query,container){
       if ( rows.length > 0 ) {
         table.find('.cell').each(function(){
           if ( $.inArray( $(this).attr('data-row'), rows) > -1 && $(this).attr('data-filterPage') == 1 ) {
-            container.find('[data-value="currentPage"]').text(1)
+            element.find('[data-value="currentPage"]').text(1)
             $(this).css('display','flex');
           } else {
             $(this).hide()
@@ -210,7 +234,7 @@ function filterTable(query,container){
       table.find('.cell').removeAttr('data-filterPage');
       table.find('.cell[data-page]').hide();
       table.find('.cell[data-page="'+currentPage+'"]').each(function(){
-        container.find('[data-value="currentPage"]').text(currentPage)
+        element.find('[data-value="currentPage"]').text(currentPage)
         // $(this).show();
         $(this).css('display','flex');
       })
@@ -507,30 +531,6 @@ var host = {
   },
 }
 var mod = {
-  // hostStats: {
-  //   unload : function(thisHost){
-  //     var thisMod = thisHost.find('[data-mod="hostStats"]');
-  //     thisMod.find('.progress-bar').css('width','0%');
-  //     thisMod.find('.stat-detail .value').text('0%');
-  //   },
-  //   request : function(thisHost){
-  //     serverRequest({'request': 'hostStats', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')})
-  //   },
-  //   response : function(thisHost,responseData){
-  //     // Populate stats
-  //     var thisMod = thisHost.find('[data-mod="hostStats"]')
-  //     $.each(responseData['stats'],function(key,value){
-  //       var submod = thisMod.find('[data-stat="'+key+'"]');
-  //       var bar = submod.find('.progress-bar');
-  //       var detail = submod.find('.stat-detail .value');
-  //       bar.css('width',value+'%');
-  //       detail.text(value+'%')
-  //       if ( value <= 60 ) { bar.removeClass('mid high').addClass('low') }
-  //       if ( value > 60 && value <= 75 ) { bar.removeClass('low high').addClass('mid') }
-  //       if ( value > 75 ) { bar.removeClass('low mid').addClass('high') }
-  //     })
-  //   },
-  // },
   containers : {
     request: function(thisHost) {
       serverRequest({'request': 'containers', 'dashboard': $('.dashboard').attr('data-dashboard'), 'host': thisHost.attr('data-host')});
@@ -619,7 +619,7 @@ var mod = {
         // Disable container buttons
         thisMod.find('footer .footer-controls [data-fn^="container"]').prop('disabled', true);
         // Populate table with data
-        var columns = ['Name','Id','Command','Image','Ports','State','Health','Memory'];
+        var columns = ['Name','Id','Command','Image','Ports','State','Health','Started','Memory'];
         buildTable(thisMod,responseData['containers'],columns,10)
         // Get counts
         countTotal = responseData['containers'].length; countRunning = 0; countExited = 0; countHealthy = 0; countUnhealthy = 0; countStarting = 0
@@ -650,11 +650,13 @@ var mod = {
         thisTable.find('.cell[data-column="State"]').each(function(){
           if ( $.inArray('exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
           if ( $.inArray('running', $(this).text().split(" ")) > -1 ) { $(this).addClass('running') }
+
         })
         thisTable.find('.cell[data-column="Health"]').each(function(){
           if ( $.inArray('healthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('healthy') }
           if ( $.inArray('unhealthy', $(this).text().split(" ")) > -1 ) { $(this).addClass('unhealthy') }
           if ( $.inArray('Exited', $(this).text().split(" ")) > -1 ) { $(this).addClass('exited') }
+          if ( $.inArray('starting', $(this).text().split(" ")) > -1 ) { $(this).addClass('starting') }
         })
         // Apply any filters that may be applied
         var tableFilter = thisTable.attr('data-filter');
@@ -689,7 +691,7 @@ var mod = {
         clearTimeout(filterDelay);
         filterDelay = setTimeout(function(){
           var query = thisEl.val();
-          filterTable(query,thisMod);
+          filterTable(query,thisMod,true);
         }, 300);
       })
       // Attach events to control buttons
@@ -701,17 +703,9 @@ var mod = {
         selectedCells.each(function(){
           selectedContainers.push($(this).text());
         })
-        if (thisFn == 'containerStop' || thisFn == 'containerStart' || thisFn == 'containerRestart' ) {
+        if (thisFn == 'containerStop' || thisFn == 'containerStart' || thisFn == 'containerRestart' || thisFn == 'containerRemove' ) {
           thisMod.attr('data-paused','false')
           serverRequest({'request': thisFn, 'dashboard': thisDashboard, 'host': thisHost.attr('data-host'), 'containers': selectedContainers});
-        }
-        if (thisFn == 'containerRemove') {
-          var modalEl = $('[data-modal="confirm"]');
-          $.each(selectedContainers,function(i,v){
-            modalEl.find('section .values').append('<p>'+v+'</p>');
-          })
-
-          modal.display(modalEl)
         }
         if (thisFn == 'containerLog') {
           var modalEl = $('[data-modal="containerLog"]')
