@@ -1,8 +1,7 @@
-# dkrmon ![size-badge]
-
+# dkrmon
 dkrmon is a simple GUI for monitoring and managing Docker containers across multiple standalone hosts. dkrmon consists of server and agent elements which are designed to run as containers making deployment quick and easy.
 
-![dkrmon](http://screen1.png)
+![dkrmon](screen1.png)
 
 ### Installation
 #### Server
