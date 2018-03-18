@@ -660,7 +660,9 @@ var mod = {
         })
         // Apply any filters that may be applied
         var tableFilter = thisTable.attr('data-filter');
-        if ( tableFilter ) { filterTable(tableFilter,thisTable) }
+        if ( tableFilter ) {
+          filterTable(tableFilter,thisMod,true)
+        }
         // Row select
         thisTable.find('.cell').click(function(){
           var row = $(this).attr('data-row');
@@ -953,11 +955,11 @@ window.setInterval(function(){
   $('.host').each(function(){
     host.health.request($(this));
   })
-}, 30000);
+}, 5000);
 
 // Server Requests
 function serverRequest(request){
-  console.log('serverRequest',request);
+  // console.log('serverRequest',request);
   if ( request['request'] == 'containerStart' || request['request'] == 'containerStop' || request['request'] == 'containerRestart' ) { ui.spinner() }
   socket.emit('serverRequest', request);
 }
@@ -965,7 +967,7 @@ function serverRequest(request){
 // Server Responses
 socket.on('serverResponse', function(reponseData) {
   if (reponseData) {
-    console.log("serverResponse",reponseData)
+    // console.log("serverResponse",reponseData)
     if ( reponseData['request'] == 'containerStart' || reponseData['request'] == 'containerStop' || reponseData['request'] == 'containerRestart' ) { ui.spinner('destroy') }
     var hostEl = $('[data-host="'+reponseData['host']+'"]');
     switch (reponseData['request']) {
@@ -977,7 +979,7 @@ socket.on('serverResponse', function(reponseData) {
       case 'containerStart':
       case 'containerRestart':
       case 'containerRemove':
-        console.log("serverResponse",reponseData)
+        // console.log("serverResponse",reponseData)
         mod.containers.request(hostEl);
         ui.notify(reponseData)
         break;
