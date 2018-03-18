@@ -660,7 +660,9 @@ var mod = {
         })
         // Apply any filters that may be applied
         var tableFilter = thisTable.attr('data-filter');
-        if ( tableFilter ) { filterTable(tableFilter,thisTable) }
+        if ( tableFilter ) {
+          filterTable(tableFilter,thisMod,true)
+        }
         // Row select
         thisTable.find('.cell').click(function(){
           var row = $(this).attr('data-row');
@@ -953,7 +955,7 @@ window.setInterval(function(){
   $('.host').each(function(){
     host.health.request($(this));
   })
-}, 30000);
+}, 5000);
 
 // Server Requests
 function serverRequest(request){
