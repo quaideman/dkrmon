@@ -65,7 +65,7 @@ def startAgent():
                 sys.exit(1)
             finally:
                 clientsocket.close()
-    except:
+    except Exception:
         logging.exception('Agent failed to start or exited abnormally')
 def containerStatCollection(refresh=False):
     ''' Create dict of container stat generator objects '''
