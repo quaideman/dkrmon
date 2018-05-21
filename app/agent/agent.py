@@ -1,5 +1,5 @@
 ## Imports
-import socket,json,struct,docker,os,sys,datetime
+import socket,json,struct,docker,os,sys,datetime,logging
 
 ## Functions
 def log(tuple):
@@ -60,13 +60,13 @@ def startAgent():
                 sndPayload = sndPayload.encode()
                 socketSnd(clientsocket, sndPayload)
                 # log(('INFO','Sending',sndPayload))
-            except:
-                log(('ERR','Agent exited abnormally'))
+            except Exception:
+                logging.exception('Agent exited abnormally')
                 sys.exit(1)
             finally:
                 clientsocket.close()
     except:
-        log(('ERR','Agent failed to start or exited abnormally'))
+        logging.exception('Agent failed to start or exited abnormally')
 def containerStatCollection(refresh=False):
     ''' Create dict of container stat generator objects '''
     containers = dkrClient.df()['Containers']
