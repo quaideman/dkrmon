@@ -3,11 +3,16 @@ from flask import Flask, render_template, request
 from flask_socketio import SocketIO, send, emit
 import socket,time,json,struct,os,sys,datetime,re,logging,threading
 from operator import itemgetter
+## Setup logging
+thisDir = os.path.dirname(os.path.realpath(__file__))
+logging.basicConfig(stream=sys.stdout,level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d-%m-%Y %I:%M:%S')
 
 ## Setup
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
+logging.getLogger('socketio').setLevel(logging.ERROR)
+logging.getLogger('engineio').setLevel(logging.ERROR)
 
 ## Routes
 @app.route('/')
@@ -21,10 +26,6 @@ def loadDashboard(dashboard):
     return render_template('main.html', dashboards=dashboards, dashboard=dashboard['name'], hosts=dashboard['hosts'])
 
 ## Functions
-def log(tuple):
-    ''' Log messages to the console/log '''
-    now = str(datetime.datetime.today()).split('.')[0]
-    print(now,tuple)
 def getDashboard(dashboardName=False):
     ''' Return requested dashboard if specified, otherwise return all dashboards '''
     def getData():
@@ -34,7 +35,7 @@ def getDashboard(dashboardName=False):
             data = json.load(open(configFile,'r'))
             return data
         except:
-            log(('ERR','getData','Unable to open',configFile))
+            logging.error('getData: Unable to open',configFile)
             return False
     data = getData()
     if data:
@@ -43,6 +44,7 @@ def getDashboard(dashboardName=False):
                 if dashboard['name'] == dashboardName: return dashboard
         else:
             return data['dashboards']
+
 def getHost(dashboardName,hostName):
     ''' Return requested host '''
     dashboard = getDashboard(dashboardName)
@@ -52,16 +54,9 @@ def getHost(dashboardName,hostName):
     else:
         return False
 
-# def threadRequest(request):
-#     response = []
-#     thread = threading.Thread(target=hostRequest, args=(response,request,))
-#     thread.start()
-#     thread.join()
-#     return response[0]
-
 def hostRequest(request):
     ''' Make requests against specified hosts '''
-    log(('DEBUG','GOT REQUEST FROM THREAD:',request))
+    # logging.debug('GOT REQUEST FROM THREAD:',request)
     def socketSnd(sock, msg):
         ''' Prefix each message with a 4-byte length (network byte order) '''
         msg = struct.pack('>I', len(msg)) + msg
@@ -117,9 +112,8 @@ def hostRequest(request):
 def serverRequest(request):
     ''' Client requests against this server '''
     returnData = hostRequest(request)
-    # returnData = threadRequest(request)
     emit('serverResponse', returnData)
 
 ## Flask
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=False)

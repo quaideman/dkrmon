@@ -1,20 +1,19 @@
 ## Imports
 import socket,json,struct,docker,os,sys,datetime,logging
+## Setup logging
+thisDir = os.path.dirname(os.path.realpath(__file__))
+logging.basicConfig(stream=sys.stdout,level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s', datefmt='%d-%m-%Y %I:%M:%S')
 
 ## Functions
-def log(tuple):
-    ''' Log messages to the console/log '''
-    now = str(datetime.datetime.today()).split('.')[0]
-    print(now,tuple)
 def fileContents(filePath):
     try:
-
         fileObj = open(filePath)
         returnData = fileObj.read().strip('\n')
         fileObj.close()
         return returnData
     except:
         return False
+
 def startAgent():
     """ Start the agent  """
     def socketSnd(sock, msg):
@@ -41,32 +40,31 @@ def startAgent():
     interface = "0.0.0.0"
     port=5000 if not os.environ.get('DKRMON_PORT') else int(os.environ.get('DKRMON_PORT'))
     try:
-        log(('Starting container stat streams...'))
-        # containerStatCollection()
+        logging.info('Starting container stat streams...')
         ## Create a socket object
         serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         serversocket.bind((interface, port)) # Bind
         serversocket.listen(2) # queue up to 2 requests
-        # log(('INFO','Started agent on',interface,port))
         while True:
             try:
                 # Establish a connection
                 clientsocket,addr = serversocket.accept()
                 rcvPayload = socketRcv(clientsocket)
                 rcvPayload = json.loads(rcvPayload)
-                # log(('INFO','Request received',rcvPayload))
+                logging.debug('Request received: %s', rcvPayload)
                 sndPayload = myRequests(rcvPayload)
                 sndPayload = json.dumps(sndPayload)
                 sndPayload = sndPayload.encode()
                 socketSnd(clientsocket, sndPayload)
-                # log(('INFO','Sending',sndPayload))
+                logging.debug('Sending: %s', sndPayload)
             except Exception:
                 logging.exception('Agent exited abnormally')
                 sys.exit(1)
             finally:
-                clientsocket.close()
+                if clientsocket: clientsocket.close()
     except Exception:
         logging.exception('Agent failed to start or exited abnormally')
+
 def containerStatCollection(refresh=False):
     ''' Create dict of container stat generator objects '''
     containers = dkrClient.df()['Containers']
@@ -76,53 +74,13 @@ def containerStatCollection(refresh=False):
     for container in containers:
         if container['State'] == "running":
             if container['Id'] not in containerStats:
-                log((container['Id'],'not in containerStats - adding'))
+                logging.debug(container['Id'], 'not in containerStats - adding')
                 containerStats[container['Id']] = dkrClient.containers.get(container['Id']).stats(stream=True,decode=True)
+
 def myRequests(rcvPayload):
     ''' Request handlers for requests made against this agent '''
-    # def dkrDetails(resource):
-    #     def stats(containerId):
-    #         try:
-    #             for stat in containerStats[containerId]:
-    #                 returnData = stat
-    #                 break
-    #         except:
-    #             returnData = "null"
-    #         else:
-    #             return returnData
-    #     # def containerStatMemory(container):
-    #     #     try:
-    #     #         usage = fileContents("/dkrmon/stats/memory/{}/memory.kmem.usage_in_bytes".format(container))
-    #     #         limit = fileContents("/dkrmon/stats/memory/{}/memory.kmem.limit_in_bytes".format(container))
-    #     #         ## Convert to MB
-    #     #         usageMB = (int(usage) / 1024) / 1024
-    #     #         limitMB = (int(limit) / 1024) / 1024
-    #     #         pct = (int(memoryUsage) / int(memoryLimit)) * 100
-    #     #         returnData = {'Usage':usageMB,'Limit':limitMB,'Pct':int(pct)}
-    #     #     except:
-    #     #         returnData = "null"
-    #     #     else:
-    #     #         return returnData
-    #     returnData = dkrClient.df()
-    #     if resource == 'Containers':
-    #         ## Refresh containerStatCollection
-    #         containerStatCollection("refresh")
-    #         for container in returnData['Containers']:
-    #             #container['Memory'] = containerStatMemory(container['Id'])
-    #             container['Stats'] = stats(container['Id'])
-    #
-    #     return returnData[resource]
     def containerDetails():
         ''' Return all container details '''
-        # def stats(containerId):
-        #     try:
-        #         for stat in containerStats[containerId]:
-        #             returnData = stat
-        #             break
-        #     except:
-        #         returnData = "null"
-        #     else:
-        #         return returnData
         def containerStatMemory(containerId):
             try:
                 usage = int(fileContents("/dkrmon/stats/memory/{}/memory.usage_in_bytes".format(containerId)))
@@ -136,11 +94,9 @@ def myRequests(rcvPayload):
                 return None
 
         containers = dkrClient.containers.list(all=True)
-        # containerStatCollection("refresh")
         returnData = []
         for container in containers:
             data = container.attrs
-            #data['Stats'] = stats(data['Id'])
             data['Memory'] = containerStatMemory(data['Id'])
             returnData.append(data)
         return returnData
@@ -273,18 +229,20 @@ def myRequests(rcvPayload):
     except:
         rcvPayload['result'] = 'error'
         return rcvPayload
+
 def prereqs():
     ''' Check prereqs before starting the agent '''
     ## Create the dkrClient object
-    dkrSock = '/dkrmon/app/docker.sock'
+    dkrSock = '/dkrmon/app/docker.sock' ## Use this for running inside a docker container
+    #dkrSock = '/var/run/docker.sock' ## Use this for running outside a docker container
     if os.path.exists(dkrSock):
         global dkrClient
         dkrClient = docker.DockerClient(base_url='unix:/'+dkrSock,timeout=15)
         return True
     else:
-        log((dkrSock, 'does not exist'))
+        logging.error('%s does not exist', dkrSock)
         return False
 
 ## Start
-log(('Starting agent...'))
+logging.info('Starting agent...')
 startAgent() if prereqs() else sys.exit(1)
